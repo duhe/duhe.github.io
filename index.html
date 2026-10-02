@@ -74,13 +74,48 @@
         button:hover {
             background-color: #106ebe;
         }
+ 
+    
+ .secret-links {
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+}
+
+.secret-links.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.secret-links a {
+    color: #0078d4;
+    text-decoration: none;
+}
+
+.secret-links a:hover {
+    text-decoration: underline;
+}   
+    
     </style>
 </head>
 <body>
     <div class="box">
         <h1>duhe</h1>
         <p>duhe rulez!</p>
-
+        <div class="secret-links">
+          <a href="#">Link 1</a>
+          <a href="#">Link 2</a>
+          <a href="#">Link 3</a>
+        </div>
         <button id="helloBtn">What's this?</button>
 
         <p id="output"></p>
@@ -97,6 +132,55 @@
             output.textContent = "";
         }
     });
+
+const box = document.querySelector(".box");
+const secretLinks = document.querySelector(".secret-links");
+
+let taps = [];
+let timer = null;
+
+box.addEventListener("click", function () {
+    const now = Date.now();
+
+    taps.push(now);
+
+    // We only care about the most recent 6 taps
+    if (taps.length > 6) {
+        taps.shift();
+    }
+
+    // Check for:
+    // tap, tap, PAUSE, tap, tap, tap
+
+    if (taps.length === 5) {
+        const intervals = [];
+
+        for (let i = 1; i < taps.length; i++) {
+            intervals.push(taps[i] - taps[i - 1]);
+        }
+
+        // First two taps close together
+        // Then a pause
+        // Then three taps close together
+        if (
+            intervals[0] < 400 &&
+            intervals[1] > 500 &&
+            intervals[1] < 1500 &&
+            intervals[2] < 400 &&
+            intervals[3] < 400
+        ) {
+            secretLinks.classList.toggle("visible");
+            taps = [];
+        }
+    }
+
+    // Reset if user stops tapping for 2 seconds
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+        taps = [];
+    }, 2000);
+});
+    
 </script>
 </body>
 </html>
