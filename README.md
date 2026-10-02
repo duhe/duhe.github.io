@@ -1,2 +1,2 @@
 # duhe.github.io
-duhe GitHub
+duhe github
