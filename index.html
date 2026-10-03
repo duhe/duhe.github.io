@@ -77,13 +77,12 @@
  
     
         .secret-links {
-  position: absolute;
-   right: 20px;
-   top: 10px;
-   /*left: 20px;*/
-   display: flex;
-   flex-direction: row; /* Aligns items horizontally */
-   justify-content: space-between; /* Distributes items evenly across the horizontal space */
+           position: absolute;
+           right: 20px;
+           top: 10px;
+           display: flex;
+           flex-direction: row; /* Aligns items horizontally */
+           justify-content: space-between; /* Distributes items evenly across the horizontal space */
            gap: 10px;
            opacity: 0;
            pointer-events: none;
@@ -98,7 +97,7 @@
         
         .secret-links a {
            color: #c00000;
-            font-weight: bold;
+        font-weight: bold;
            text-decoration: none;
         }
         .secret-links a:hover {
@@ -126,7 +125,7 @@
 
     btn.addEventListener("click", function () {
         if (output.textContent === "") {
-            output.textContent = "A button!";
+            output.textContent = "A button!<br><span style="font-size: 8px;">[tap-tap tap-tap-tap]</span>";
         } else {
             output.textContent = "";
         }
