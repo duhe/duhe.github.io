@@ -76,24 +76,24 @@
         }
  
     
-.secret-links {
-    position: absolute;
-    right: 20px;
-    top: 50%;
-    transform: translateY(-50%);
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.3s;
-    z-index: 2;
-}
-
-.secret-links.visible {
-    opacity: 1;
-    pointer-events: auto;
-}
+        .secret-links {
+           position: absolute;
+           right: 20px;
+           top: 50%;
+           transform: translateY(-50%);
+           display: flex;
+           flex-direction: column;
+           gap: 10px;
+           opacity: 0;
+           pointer-events: none;
+           transition: opacity 0.3s;
+           z-index: 2;
+        }
+        
+        .secret-links.visible {
+           opacity: 1;
+           pointer-events: auto;
+        }
     
     </style>
 </head>
@@ -123,82 +123,50 @@
         }
     });
 
-const box = document.querySelector(".box");
+    const box = document.querySelector(".box");
+    const secretLinks = document.querySelector(".secret-links");
 
-const secretLinks = document.querySelector(".secret-links");
-
-let taps = [];
-
-let resetTimer;
-
-box.addEventListener("click", function (event) {
-
-    // Don't count clicks on the secret links as taps
-
-    if (event.target.closest(".secret-links")) {
-
+    let taps = [];
+    let resetTimer;
+    
+    box.addEventListener("click", function (event) {
+        // Don't count clicks on the secret links as taps
+        if (event.target.closest(".secret-links")) {
         return;
-
     }
 
     const now = Date.now();
-
     taps.push(now);
-
     clearTimeout(resetTimer);
 
     // Keep only the latest 5 taps
-
     if (taps.length > 5) {
-
         taps.shift();
-
     }
 
     if (taps.length === 5) {
-
         const intervals = [
-
             taps[1] - taps[0],
-
             taps[2] - taps[1],
-
             taps[3] - taps[2],
-
             taps[4] - taps[3]
-
         ];
-
         const pattern =
-
             intervals[0] < 400 &&       // tap tap
-
             intervals[1] >= 500 &&      // PAUSE
-
             intervals[1] < 1500 &&
-
             intervals[2] < 400 &&       // tap tap tap
-
             intervals[3] < 400;
-
         if (pattern) {
-
             secretLinks.classList.toggle("visible");
-
             taps = [];
-
             return;
-
         }
-
     }
 
     // Start over if another tap doesn't arrive soon
-
     resetTimer = setTimeout(() => {
-
         taps = [];
-
     }, 1500);
 
 });
