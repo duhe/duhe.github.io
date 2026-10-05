@@ -110,10 +110,10 @@
         .secret-links a:hover {
            text-decoration: underline;
         }
-        #pointrets-tooltip {
+        #img-tooltip-popup {
             display: none;
             position: fixed;
-            width: 300px;
+            width: auto;
             height: auto;
             border-radius: 5px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.3);
@@ -130,11 +130,11 @@
         <div class="secret-links">
           <a href="https://tumblr.com/duhe" target="_blank">tumblr</a>
           <a href="https://tumblr.com/hihidu" target="_blank">memes</a>
-          <a id="pointrets" href="https://omicsapp.com/pointret/block.html" target="_blank">pointrets</a>
-          <a href="https://leprosorium.ru/users/duhe" target="_blank">lepra</a>
+          <a class="img-tooltip" href="https://omicsapp.com/pointret/block.html"  data-tooltip-img="./img/pointrets.png" target="_blank">pointrets</a>
+          <a href="https://leprosorium.ru/users/duhe" data-tooltip-img="./img/lepra.png" target="_blank">lepra</a>
         </div>
         <button id="helloBtn">What's this?</button>
-        <img id="pointrets-tooltip" src="./img/pointrets.png" alt="">
+        <img id="img-tooltip-popup" alt="">
         <p id="output"></p>
     </div>
     
@@ -197,20 +197,22 @@
         taps = [];
     }, 1500);
 
-    const pointrets = document.getElementById("pointrets");
-    const pointretsTooltip = document.getElementById("pointrets-tooltip");
+    const tooltip = document.getElementById("img-tooltip-popup");
     
-    pointrets.addEventListener("mouseenter", function () {
-        const r = pointrets.getBoundingClientRect();
+    document.querySelectorAll(".img-tooltip").forEach(link => {
     
-        pointretsTooltip.style.left = r.left + "px";
-        pointretsTooltip.style.top = (r.bottom + 10) + "px";
-        pointretsTooltip.style.display = "block";
-    });
+        link.addEventListener("mouseenter", function () {
+            const r = link.getBoundingClientRect();
     
-    pointrets.addEventListener("mouseleave", function () {
-        pointretsTooltip.style.display = "none";
-    });
+            tooltip.src = link.dataset.tooltipImg;
+            tooltip.style.left = r.left + "px";
+            tooltip.style.top = (r.bottom + 10) + "px";
+            tooltip.style.display = "block";
+        });
+    
+        link.addEventListener("mouseleave", function () {
+            tooltip.style.display = "none";
+        });
     
     });
 
