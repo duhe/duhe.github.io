@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pointrets: list</title>
+  <style>
+    :root {
+      --bg: #000;
+      --panel: #0b0b0b;
+      --border: #1a1a1a;
+      --text: #e8e8e8;
+      --muted: #bfbfbf;
+      --accent: #2f81f7;
+    }
+    html,body { background: #000; height: 100%; margin: 0; padding: 0;margin: 0; background: var(--bg); color: var(--text); }
+    /*body {
+      margin: 0; background: var(--bg); color: var(--text);
+      font: 16px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Noto Sans", Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    }*/
+    body {
+      margin: 0; background: var(--bg); color: var(--text);
+      font: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Noto Sans", Arial, "Apple Color Emoji", "Segoe UI Emoji";   
+    }
+    .wrap { max-width: 750px; margin: 24px auto; padding: 0 16px; }
+    h1 { font-size: 1.125rem; font-weight: 600; color: var(--muted); margin: 8px 0 18px; }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 0;
+      overflow: hidden;
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.03) inset, 0 10px 30px rgba(0,0,0,0.6);
+      margin: 18px 0;
+    }
+    .media { display: block; height: auto; max-width: 100%; }
+
+    .meta {
+      display: flex; align-items: center; justify-content: flex-start;
+      padding: 10px 12px; gap: 8px; border-top: 1px solid var(--border);
+    }
+    .hint { color: var(--muted); font-size: 0.9rem; }
+
+    .toggle {
+      appearance: none; border: 1px solid var(--border); background: #101010; color: var(--text);
+      padding: 6px 10px; border-radius: 0; cursor: pointer; font-weight: 600;
+    }
+    .toggle:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+    /* Hidden content area */
+    .hidden {
+      display: none; padding: 14px 12px; border-top: 1px dashed var(--border);
+    }
+    /* Reveal on hover OR when the card has .show */
+    .card.show .hidden { display: block; }
+
+    .title { font-size: 1.05rem; font-weight: 700; margin: 0 0 10px; }
+    .line { margin: 10px 0; }
+    .line img { width: 100%; height: auto; display: block; border-radius: 0; border: 1px solid var(--border); }
+		.line a,
+		.line a:visited { color: #fff; }
+		.line a:hover   { text-decoration: underline; }
+
+    .footer-note { color: var(--muted); font-size: 0.85rem; margin-top: 14px; }
+    /* Ra { color: #9ec1ff; text-decoration: none; }*/
+    /* Ra:hover { text-decoration: underline; }*/
+  </style>
+</head>
+<body>
+<div style="font-size: 16px; place-items: left; justify-self:start; align-self:start; margin:10px;">
+<a href="grid.html" style="color:white; font-family:Arial;" title='Flip cards, portrait titles'>grid</a> 
+&nbsp;&nbsp;
+<a href="list.html" style="color:white; font-family:Arial; text-decoration: none;" title='Scroll, extra info'>list</a>
+&nbsp;&nbsp;
+<a href="block.html" style="color:white; font-family:Arial;" title='Flip whole block, no info'>block</a>
+</div>
+	<div class="wrap">
+    <div id="app" aria-live="polite"></div>
+  </div>
+
+  <script>
+    // === CONFIG ===
+    // Visible image prefix and hidden image prefix (change if your naming differs)
+    const VISIBLE_PREFIX = 'b'; // b{base}
+    const HIDDEN_PREFIX  = 'a'; // a{base}
+
+    // Example data row provided by you. Add more objects to this array as needed.
+    const DATA = [
+{base: 'vulture.png', w:140, h:100, tip: '1993: The Struggling Girl (Kevin Carter)', info1: 'На самом деле выяснилось, что это мальчик (предположительно нашли в 2011 году, выжил). Выигравшая Пулитцера фотография голодающего суданского ребёнка и стервятника.', info2: 'Полное название: «Стервятник и маленькая девочка». На фотографа вылился поток хейта - он покончил жизнь самоубийством в 1994'},
+{base: 'jobs.png', w:100, h:140, tip: '2006: Steve Jobs (Albert Watson)', info1: '«У нас был час», — вспоминает Уотсон. «Он должен был прийти в девять, и появился без одной минуты девять». PR‑менеджер объяснила, что Джобс терпеть не может фотографов, и Уотсон быстро придумал, как завоевать его доверие. «Думаю, управлюсь за полчаса», — сказал он Джобсу, который отреагировал на это, как на «рождественский подарок».', info2: 'Джобсу сказали «слегка податься вперёд к камере» и изобразить выражение лица, как будто он спорит за столом с людьми, которые с ним не согласны, хотя он уверен, что прав. Джобс пояснил Уотсону, что для него это «легко», потому что он часто так делает.'},
+{base: 'bluered.png', w:100, h:140, tip: '1880: Self-portrait (Vincent Van Gogh)', info1: 'Большинство автопортретов — более 25 — были выполнены в Париже (1886–1888). В тот период у него не хватало денег и он с трудом находил моделей, поэтому художник выбрал простое решение — писал себя.', info2: 'Известно более 35 автопортретов Винсента, но существует лишь одна его фотография‑портрет.'},
+{base: 'gagarin.png', w:100, h:100, tip: '1961: Юрий Гагарин (Совфото)', info1: 'Один виток', info2: 'Популяризовано «108 минут», рассекреченная история полёта пишет 106.'},
+{base: 'peach.png', w:100, h:140, tip: '1887: Девочка с персиками (Валентин Серов)', info1: '«Всё, чего я добивался, — это свежести, той особенной свежести, которую всегда чувствуешь в натуре и не видишь в картинах. Писал я больше месяца и измучил её, бедную, до смерти, уж очень хотелось сохранить свежесть живописи при полной законченности, — вот как у старых мастеров».', info2: 'В конце декабря 1907 года, в возрасте 32 лет, заболела пневмонией и вскоре умерла.'},
+{base: 'maya.png', w:100, h:140, tip: '1920: Маяковский (unknown)', info1: 'Сходил в фотостудию', info2: 'Почти всю юность Маяковский проходил без зубов. Сказалось очень бедное после смерти отца существование и год в тюрьме, из которой Маяковский вышел практически беззубым – были разрушены 16 зубов. Чуть позднее, в 22-23 Маяковский обзавелся новыми зубными протезами, их оплатила Лилия Брик. '},
+{base: 'square.png', w:140, h:100, tip: '1989: Tank Man (Jeff Widener)', info1: 'В апреле 1998 года журнал Time включил «Неизвестного мятежника» в список 100 самых влиятельных людей XX века.', info2: 'В 2003 году журнал Life издал книгу «100 фотографий, изменивших мир», куда также вошли снимки людей, останавливающих колонну танков.'},
+{base: 'banksy.png', w:140, h:100, tip: '2002: Balloon Girl (Banksy)', info1: '«Девочка с шаром» (Girl With Balloon), также известная как Balloon Girl, впервые была создана в Лондоне в 2002 году: изначально трафарет нанесён на стены под Ватерлоо‑бридж на Саутбэнке. Другая версия появилась примерно в то же время в Шордиче, на стенах типографии на востоке Лондона.', info2: 'Картина Бэнкси «Девочка с шаром» самоуничтожилась на аукционе, что произвело фурор в СМИ. Сразу после продажи на Sotheby’s в 2018 году полотно стало проходить через шредер, скрытый в раме. Покупатель не отказался от сделки, а работа получила новое название — «Любовь в корзине» (Love Is In The Bin) — единственное оригинальное произведение, созданное в прямом эфире аукциона.'},
+{base: 'scream.png', w:100, h:140, tip: '1893: The Scream (Edvard Munch)', info1: 'Мунк вспоминал, что гулял на закате, когда лучи заходящего солнца вдруг окрасили облака «в кроваво‑красный». Он почувствовал «бесконечный крик, проходящий через природу».', info2: 'Норвежское название произведения — «Skrik»'},
+{base: 'pink.png', w:100, h:140, tip: '1961: Breakfast at Tiffanys (Blake Edwards)', info1: 'Одри Хэпбёрн', info2: 'Плакат Роберта МакГиннисома, известного американского художника и иллюстратора, автора многочисленных афиш к фильмам и обложкам книг'},
+{base: 'napoleon.png', w:100, h:140, tip: '1840: Napoleon at Fontainebleau (Paul Delaroche)', info1: 'Работа создана в том же году, когда состоялась доставка останков Наполеона с острова Св. Елены.', info2: 'Полное название: «Наполеон I в Фонтенбло 31 марта 1814 года».'},
+{base: 'dali.png', w:100, h:100, tip: '1954: Spanish painter Salvador Dali (Philippe Halsman)', info1: 'Поговаривают, что Усы Дали были больше чем данью моде — это символ его уникального видения и художественного гения.', info2: 'Усы Дали были застрахованы на 1 миллион долларов, он очень их берег. Он говорил, что никогда не сбрил бы их, даже за миллион.'},
+{base: 'audrey_hands.png', w:100, h:140, tip: '1950: Audrey Hepburn (unknown)', info1: 'Одри Хепбёрн', info2: 'Имя при рождении Одри Кэтлин Растон (1929–1993)'},
+{base: 'sailor.png', w:100, h:140, tip: '1945: V-J Day in Times Square (Alfred Eisenstaedt)', info1: 'Случайный непостановочный снимок', info2: 'День победы над Японией — 14 августа 1945 года. Фотография была опубликована неделей позже в журнале Life в 12‑страничном разделе «Празднования победы», где собрали кадры торжеств по всей стране.'},
+{base: 'whistler_Mother.png', w:140, h:100, tip: '1871: Whistlers Mother (James Whistler)', info1: 'Это одно из самых известных произведений американского искусства за пределами США; его называли американской иконой и «викторианской Мона Лизой».', info2: ''},
+{base: 'pulp.png', w:140, h:100, tip: '1994: Pulp Fiction (Quentin Tarantino)', info1: 'Ума Турман', info2: 'По мере того как «Криминальное чтиво» захватывало воображение Голливуда, его постер захватывал комнаты общаг США по всей стране.'},
+{base: 'hitchhock.png', w:100, h:140, tip: '1960: Alfred Hitchcock (unknown)', info1: 'Альфред Хичкок', info2: 'В начале 1960-х Хичкоку был запрещен вход в Диснейленд. Сам Уолт Дисней отказал ему в просьбе использовать Диснейленд в качестве локации для съемок. Обосновал тем, что Хичкок «снял тот отвратительный фильм — Психо». '},
+{base: 'renoir_JeanneSamary.png', w:100, h:140, tip: '1877: The Day Dream (Pierre-Auguste Renoir)', info1: 'Работа была показана на Третьей выставке импрессионистов в 1877 году и была встречена в основном негативно. Позже вошла в собрание Ивана Морозова, конфискованное советским государством после Октябрьской революции.', info2: 'В 1970 году изображение появилось на марке СССР.'},
+{base: 'che.png', w:100, h:100, tip: '1960: Che Guevara (Alberto Korda)', info1: 'Снимок сделан 5 марта 1960 года в Гаване на траурной церемонии по жертвам взрыва на судне «Ла Кубр».', info2: 'Подчёркивая вездесущность и широкую привлекательность изображения, Мэрилендский институт колледжа искусств назвал его символом XX века и «самой известной фотографией в мире».'},
+{base: 'monroe_set.png', w:100, h:140, tip: '1954: The Seven Year Itch (Billy Wilder)', info1: 'Из-за собравшейся толпы фанатов, Мэрилин пришлось перезаписать сцену уже на территории студии 20th Century Fox.', info2: ''},
+{base: 'sparrow.png', w:100, h:100, tip: '2003: Pirates of the Caribbean (Gore Verbinski)', info1: 'Джонни Депп', info2: 'Походка капитана Джека Воробья у Джонни Деппа в первую очередь вдохновлена Китом Ричардсом (The Rolling Stones) — особенно его узнаваемой манерой двигаться, — а также включает элементы исследований о пиратах XVIII века и остроумную игру на эффекте синдрома mal de débarquement (известного как «болезнь схода на берег»), что и создаёт уникальную “пьяную” поступь персонажа.'},
+{base: 'johny.png', w:100, h:140, tip: '1980: The Shining (Stanley Kubrick)', info1: 'Фраза «Heres is Johnny!» пришла из ночного шоу «The Tonight Show Starring Johnny Carson».', info2: ''},
+{base: 'kiss.png', w:100, h:140, tip: '1908: The Kiss (Gustav Klimt)', info1: 'нем. Der Kuss', info2: 'Искусствоведы предполагают, что Климт изображает историю Орфея и Эвридики.'},
+{base: 'adam.png', w:140, h:100, tip: '1512: The Creation of Adam (Michelangelo)', info1: 'Потолок Сикстинской капеллы, написан ок. 1508–1512 годов.', info2: 'Некоторые считают, что Микеланджело намеренно изобразил Бога внутри очертания человеческого мозга, указывая на связь между божественным вдохновением и человеческим разумом.'},
+{base: 'demon.png', w:140, h:100, tip: '1890: Демон Сидящий (Михаил Врубель)', info1: 'В этой работе и других Врубель исследовал тему Демона из поэмы М. Лермонтова (1839) — байронического демона, влюбившегося в грузинскую княжну, погибшую от его поцелуя.', info2: 'Лицо своего демона Врубель наделил «женскими» чертами. Возможно, он желал выразить нечто среднее между мужской и женской стихиями природы.'},
+{base: 'hamming.png', w:100, h:140, tip: '1957: Ernest Hemingway (Yousuf Karsh)', info1: 'Карш считал Хемингуэя застенчивым человеком, «избитым жизнью», но, казалось, неуязвимым, что контрастировало с ожиданиями увидеть героя своих романов.', info2: ''},
+{base: 'joconda.png', w:100, h:140, tip: '1506: Gioconda (Leonardo da Vinci)', info1: 'Название картины, известной по‑английски как Mona Lisa, основано на предположении, что она изображает Лизу дель Джокондо, хотя сходство неочевидно.', info2: 'В 1911 году картина ещё не была популярна у широкой публики. 21 августа 1911 года её украли из Лувра; на следующий день о пропаже первым сообщил художник Луи Беро. Это стало началом популярности'},
+{base: 'lilu.png', w:100, h:100, tip: '1997: The Fifth Element (Luc Besson)', info1: 'Мила Йовович', info2: 'Lilu Dallas, multipass'},
+{base: 'pearl.png', w:100, h:140, tip: '1665: Girl with a Pearl Earring (Johannes Vermeer)', info1: 'Последняя реставрация (1994) выявила скрытые нюансы цветовой гаммы и усилила интимность взгляда девушки на зрителя.', info2: 'В ходе работ обнаружили, что тёмный фон, ныне местами пятнистый, изначально был глубокого эмалевого зелёного цвета.'},
+{base: 'audrey_tall.png', w:100, h:140, tip: '1961: Breakfast at Tiffanys (Blake Edwards)', info1: 'Одри Хепбёрн', info2: 'Что она держит во рту называется «Cigarillo» («Сигарильо»).'},
+{base: 'rockafeller.png', w:140, h:100, tip: '1932: Lunch atop a Skyscraper (unclear)', info1: 'Снимок часто ошибочно приписывают Льюису Хайну, но истинный автор неизвестен. Появлялись свидетельства в пользу Чарльза Эббетса, но выяснилось, что на съёмке присутствовали и другие фотографы. Личности рабочих на фото также во многом не установлены.', info2: 'Многие заявляли о своей идентификации на снимке, но достоверно подтверждены лишь немногие.'},
+{base: 'venus.png', w:100, h:140, tip: '1486: The Birth of Venus (Sandro Botticelli)', info1: 'Бесконечно анализировалось искусствоведами; основные темы — подражание античным живописцам и контекст свадебных торжеств.', info2: 'Сюжет — не строго «Рождение Венеры» (название закрепилось в XIX веке), а следующая сцена её истории: прибытие на берег, гонимая ветром.'},
+{base: 'ghandy.png', w:140, h:100, tip: '1946: Gandhi and His Spinning Wheel (Margaret Bourke-White)', info1: 'Этот снимок появился в журнале LIFE лишь через несколько месяцев, и то маленькой картинкой над статьёй (июнь 1946) о том, как Ганди увлекался «природными лечениями» для больных.', info2: 'Прялка Ганди, или чаркха, — портативное устройство для прядения хлопка; стала мощным символом независимости Индии и экономической самодостаточности в борьбе против британского владычества.'},
+{base: 'amelie.png', w:140, h:100, tip: '2001: Amelie (Jean-Pierre Jeunet)', info1: 'Одри Тоту', info2: 'Милая девушка, наслаждающаяся маленькими радостями жизни. Ложечка для раскалывания корочки крем‑брюле.'},
+{base: 'enstein.png', w:100, h:140, tip: '1951: Einsteins tongue (Arthur Sasse)', info1: 'Альберт Энштейн', info2: 'Снимок сделан в 1951 году, на его 72‑й день рождения, после долгого дня, когда фотографы просили его улыбаться. Раздражённый, Эйнштейн показал язык, покидая вечеринку в Принстоне.'},
+{base: 'frida.png', w:100, h:140, tip: '1940: Thorn Necklace and Hummingbird (Frida Kahlo)', info1: 'У неё была домашняя обезьянка‑паук.', info2: 'Большой <a href="https://www.fridakahlo.org/assets/img/paintings/self-portrait-with-necklace-of-thorns.jpg">оригинал</a>'},
+{base: '_malevich.png', w:100, h:100, tip: '1915: Черный квадрат (Казимир Малевич)', info1: '■', info2: 'Относится к циклу супрематических работ Малевича, в которых художник исследовал базовые возможности цвета и композиции; задумана как часть триптиха вместе с «Чёрным кругом» и «Чёрным крестом».'},
+{base: 'pushkin.png', w:100, h:140, tip: '1827: Портрет Пушкина (Орест Кипренского)', info1: 'Александр «наше всё» Пушкин', info2: 'В сентябре 1826 года Пушкин был вызван императором Николаем из ссылки в Михайловском. Поэту разрешили жить в обеих столицах, и в мае 1827 года он приехал из Москвы в Петербург, где и был нарисован'},
+{base: 'wecandoit.png', w:100, h:140, tip: '1943: We Can Do It! (Howard Miller)', info1: 'Джеральдин Хофф Дойл ошибочно считала, что она — прототип плаката. Она думала, что запечатлена на военной фотографии работницы завода и что именно она вдохновила плакат Миллера.', info2: ''},
+{base: 'curbet_DesparateMan.png', w:140, h:100, tip: '1845: Le Désespéré (Gustave Courbet)', info1: 'Густав был так привязан к полотну «Отчаявшийся», что забрал его с собой в эмиграцию в Швейцарию в 1873 году.', info2: ''},
+{base: 'kramskoy_Neizvestnaya.png', w:140, h:100, tip: '1883: Неизвестная (Иван Крамской)', info1: 'Портрет часто ошибочно называют «Незнакомкой» по одноимённому стихотворению Александра Блока (1906). Сам Блок боготворил картину Крамского и до 1917 года любил ходить в Третьяковскую галерею.', info2: ''},
+{base: 'archimboldo.png', w:100, h:140, tip: '1591: Vertumnus (Giuseppe Arcimboldo)', info1: 'Хотя современники Арчимбольдо называли «Vertumnus» шуткой, в нём есть и намеренные политические смыслы, в частности выбор плодов, овощей и цветов.', info2: 'Вертумн — римский бог времён года, перемен и роста растений, а также садов и плодовых деревьев.'},
+{base: 'joker.png', w:140, h:100, tip: '2008: The Dark Knight (Christopher Nolan)', info1: 'Облик Джокера в исполнении Леджера во многом основан на хаотичном, растрёпанном стиле панк‑рокера Сида Вишеса и на психопатических манерах Алекса из «Заводного апельсина» (Малкольм Макдауэлл).', info2: ''},
+{base: 'obama.png', w:100, h:140, tip: '2008: Hope (Shepard Fairey)', info1: 'Фэйри основывал дизайн на фото, сделанном внештатным фотографом AP Мэнни Гарсией.', info2: ''},
+{base: 'andy.png', w:100, h:100, tip: '1967: Shot Marilyns (Andy Warhol)', info1: '«Когда в тот месяц умерла Мэрилин Монро, мне пришла идея сделать шёлкографии с её прекрасным лицом — первые „Мэрилин“».', info2: 'Взято с <a href="https://upload.wikimedia.org/wikipedia/commons/e/ec/Monroe_in_Niagara_(1953_publicity_photo).jpg">рекламного портрета</a> Мэрилин Монро к фильму «Ниагара» (1953)'},
+{base: 'vanEyck_Arnolfini.png', w:100, h:140, tip: '1434: Arnolfini Portrait (Jan van Eyck)', info1: 'Её считают одной из самых оригинальных и сложных картин западного искусства — за красоту, сложную иконографию, геометрическую ортогональную перспективу и расширение пространства с помощью зеркала.', info2: ''},
+{base: 'liepke_resting.png', w:100, h:140, tip: '2016: Resting (Malcolm Liepke)', info1: '<a href="https://www.yellowtrace.com.au/malcolm-liepke-sensual-portraits/">https://www.yellowtrace.com.au/malcolm-liepke-sensual-portraits/</a>', info2: ''},
+{base: 'milk.png', w:100, h:140, tip: '1658: The Milkmaid (Johannes Vermeer)', info1: 'До появления в больших домах молочницы работали исключительно в конюшнях; позднее их стали нанимать и для домашней работы, а не приглашать дополнительный персонал со стороны.', info2: ''},
+{base: 'fournier_OmayraSanchez.png', w:140, h:100, tip: '1985: Omayra Sánchez (Frank Fournier)', info1: 'Оползень от извержения вулкана Невадо‑дель‑Руис в Армеро, департамент Толима. Санчес оказалась под завалами собственного дома и три дня находилась в воде; спасатели не могли оказать помощь, поскольку у них не было возможности провести ампутацию зажатых ног.', info2: 'Снимок Санчес, сделанный фотожурналистом Франком Фурнье незадолго до её смерти, был опубликован по всему миру и получил премию World Press Photo года за 1986‑й'},
+{base: 'alenushka.png', w:140, h:100, tip: '1881: Алёнушка (Виктор Васнецов)', info1: 'Устаревшее название «Дурочка Алёнушка».', info2: 'Исследователи творчества Васнецова перечисляют 23 эскиза и этюда к картине.'},
+{base: 'fisherman.png', w:100, h:140, tip: '1902: Old Fisherman (Tivadar Kosztka)', info1: 'Известна <a href="https://cdn.mos.cms.futurecdn.net/6mTicdF5XAxvCgXT3jfUCE-970-80.jpg.webp">оптической иллюзией</a>: при зеркальном отражении левой половины появляется молящийся человек, правой — дьявольский облик.', info2: ''},
+{base: 'hat.png', w:100, h:140, tip: '1887: Straw Hat (Vincent Van Gogh)', info1: 'Показывает знакомство художника с неоимпрессионистской техникой и теорией цвета; одна из нескольких работ, написанных на обороте раннего этюда крестьянина.', info2: '«Я специально купил достаточно хорошее зеркало, чтобы работать по собственному отражению — из‑за нехватки модели».'},
+{base: 'beatles.png', w:100, h:100, tip: '1969: Abbey Road (Beatles)', info1: 'Основана на эскизах Маккартни; снято 8 августа 1969 года у студии EMI на Эбби‑роуд.', info2: 'В 11:35 фотографу Иэну Макмиллану отвели десять минут, пока полицейский останавливал движение. Он сделал шесть кадров; Маккартни с лупой выбрал один для обложки альбома.'},
+{base: 'monroe_life.png', w:100, h:140, tip: '1954: Flying Skirt (Sam Shaw)', info1: 'Легендарный кадр с белым платьем.', info2: 'Сцену для фильма «Не связывайся с незнакомцами» планировали снимать на улице у кинотеатра Trans‑Lux в 1:00 ночи 15 сентября 1954 года. Из‑за толпы фанатов режиссёр Билли Уайлдер переснял эпизод на площадке студии 20th Century Fox.'},
+{base: 'apple.png', w:100, h:100, tip: '1964: The Son of Man (René Magritte)', info1: 'Библейская фраза в названии связывает картину с религиозными и философскими идеями о человечестве, грехе и искушении, добавляя слою смысла. Символизирует загадку идентичности и конфликт между видимым и скрытым.', info2: 'Глаза мужчины виднеются над яблоком; ещё одна деталь — его левая рука, кажется, сгибается назад в локте.'},
+{base: 'sean.png', w:100, h:140, tip: '1992: Sean Penn (Mark Seliger)', info1: 'Шон Пенн', info2: ''},
+{base: 'serebryakova_self.png', w:100, h:140, tip: '1909: За туалетом (Зинаида Серебрякова)', info1: 'Художник Валентин Серов считал, что «автопортрет у зеркала… очень милая свежая вещь».', info2: ''},
+{base: 'neo.png', w:140, h:100, tip: '1999: The Matrix (The Wachowskis)', info1: 'Кеану Ривс, Neo, The One', info2: 'There is no spoon'},
+{base: 'putin.png', w:140, h:100, tip: '2007: Владимир Путин (Platon)', info1: 'TIMES, человек года 2007. Путину поначалу, понравился портрет, но, по словам фотографа, со временем мнение президента изменилось.', info2: '«Другой мой снимок — простой портрет головы — попал на обложку журнала и получил World Press Photo 2008, но знаю, что этот „гангстерский“ кадр Путину особенно нравился».'},
+{base: 'vendetta.png', w:100, h:140, tip: '2005: V for Vendetta (James McTeigue)', info1: 'Хьюго Уивинг', info2: ''},
+{base: 'chrch.png', w:100, h:140, tip: '1941: The Roaring Lion (Yousuf Karsh)', info1: '67‑летний Уинстон Черчилль, премьер‑министр Великобритании. Портрет снят Юсуфом Каршем в 1941 году в Центр‑блоке на Парламент‑Хилл в Оттаве.', info2: 'Карш быстро подошёл к премьеру: «Простите, сэр», — сказал он и выхватил сигару изо рта. «Пока я вернулся к камере, он выглядел столь воинственно, что мог бы меня съесть».'},
+{base: 'ali.png', w:100, h:100, tip: '1965: Muhammad Ali vs. Sonny Liston, (Neil Leifer)', info1: 'Бой за титул чемпиона мира в тяжёлом весе 1965 года, арена Святого Доминика, Льюистон (Мэн), 25 мая 1965.', info2: 'Нокаут в первом раунде.'},
+{base: 'pipe.png', w:100, h:140, tip: '1889: Bandaged Ear and Pipe (Vincent Van Gogh)', info1: 'Винсент взял ухо, завернул его в газету. Натянув шляпу на рану, он с ухом в руке отправился в дом терпимости рядом с домом, спросил девушку по имени Рашель и отдал ей ухо со словами: «Хорошо храни этот предмет».', info2: ''},
+{base: 'sargent_MadameX.png', w:100, h:140, tip: '1884: Madame X (John Sargent)', info1: 'Вирджини Готрё — американка креольского происхождения из Нового Орлеана, вышедшая замуж за французского банкира вдвое старше; стала печально известной в высшем свете Парижа своей красотой и слухами о неверности.', info2: 'Её необычная красота интриговала художников; американский живописец Эдвард Симмонс писал, что «не мог перестать следить за ней, как за оленем».'},
+{base: 'afgan.png', w:100, h:140, tip: '1984: Afghan Girl (Steve McCurry)', info1: 'Афганская беженка в Пакистане во время советско‑афганской войны. Снята близ пакистанского Пешавара; появилась на обложке National Geographic в июне 1985.', info2: 'На фото ей около 15 лен; спустя 30 лет её <a href="https://static01.nyt.com/images/2021/11/26/multimedia/26xp-afghangirl/26xp-afghangirl-superJumbo.jpg">нашли</a>'},
+{base: 'valuev.png', w:140, h:100, tip: '2008: Наколай Валуев (Игорь Сахаров)', info1: 'Валуев взял в свои огромные руки нашу нежную ромашку и поднёс к лицу. Кадр получился. Мы подарили ему большую печать на холсте. Николай сказал, что жена больше не будет упрекать его, что он не дарит ей цветы: с цветком он теперь всегда будет перед её глазами.', info2: ''},
+{base: 'post.png', w:140, h:100, tip: '1889: Portrait of Joseph Roulin (Vincent Van Gogh)', info1: 'Жозеф Рулен, почтовый служащий, был другом Ван Гога, когда художник жил в Арле (1888–1889).', info2: ''},
+{base: 'wood_AmericanGothic.png', w:100, h:140, tip: '1930: American Gothic (Grant Wood)', info1: 'Портреты списаны с его сестры и семейного дантиста', info2: 'Вуд решил написать дом вместе с «тем типом людей, которые, как он воображал, должны в нём жить».'},
+{base: 'hitler.png', w:100, h:140, tip: '1928: Adolf Hitler (Heinrich Hoffmann)', info1: 'Гитлер в униформе SA [Sturmabteilung - штурмовые отряды]. Члены SA были прозваны «Коричневорубашечниками»', info2: 'Как видно в серии «Гитлер в кожанных шортах» (Hitler in Lederhosen), Гофман часто фотографировал Гитлера в разных образах в конце 1920‑х, чтобы понять, как он будет наиболее привлекателен публике.'},
+{base: 'lenon.png', w:100, h:140, tip: '1980: John and Yoko Lennon (Annie Leibovitz)', info1: 'Леннон примерно за 12 часов до того, как его убили', info2: ''},
+{base: 'ermine.png', w:100, h:140, tip: '1491: Lady with an Ermine (Leonardo da Vinci)', info1: 'Сюжетом является Чечилия Галерани, любовница Лодовико Сфорца («Моро»), герцога Миланского; Леонардо тогда был придворным художником Сфорца.', info2: 'Это второй из четырёх дошедших до нас женских портретов Леонардо; остальные — «Джоконда», «Джиневра де Бенчи» и «Прекрасная Ферроньера».'},
+{base: 'sam.png', w:100, h:140, tip: '1917: I Want You For U.S. Army (James Flagg)', info1: 'Самое знаменитое изображение дяди Сэма — плакат времён Первой мировой войны', info2: 'Флэгг использовал изменённую версию собственного лица для образа дяди Сэма, а позу подсказал ветеран Уолтер Боттс.'},
+{base: 'flag.png', w:140, h:100, tip: '1945: Raising the Flag on Iwo Jima (Joe Rosenthal)', info1: 'Снимок получил Пулитцеровскую премию за фотографию 1945 года и стал одним из самых узнаваемых изображений Второй мировой войны в США.', info2: 'Это не первое водружение флага на вершине Сурибати 23 февраля 1945 года.'},
+    ];
+
+    // Utility to create elements safely with text
+		// 1) upgrade helper to support HTML
+		function el(tag, cls, text, isHTML = false) {
+		  const node = document.createElement(tag);
+		  if (cls) node.className = cls;
+		  if (text !== undefined) {
+		    isHTML ? node.innerHTML = text : node.textContent = text;
+		  }
+		  return node;
+		}
+
+		function appendInfo(parent, html) {
+		  const p = el('p', 'line', html, true);     // <-- HTML, not text
+		  p.querySelectorAll('a').forEach(a => {
+		    const href = a.getAttribute('href') || '';
+		    // optional safety: allow only http/https
+		    if (!/^https?:/i.test(href)) a.removeAttribute('href');
+		    a.target = '_blank';
+		    a.rel = 'noopener noreferrer';
+		  });
+		  parent.appendChild(p);
+		}
+    // Apply optional width/height from item.w/item.h (number -> px or string with units)
+    function applySize(el, w, h) {
+      const set = (prop, v) => {
+        if (v === undefined || v === null || v === '') return false;
+        if (typeof v === 'number') el.style[prop] = v + 'px';
+        else el.style[prop] = String(v);
+        return true;
+      };
+      const hasW = set('width', w);
+      const hasH = set('height', h);
+      if (!hasW && !hasH) {
+        el.style.width = '100%'; // fallback to previous responsive behavior
+      }
+      el.style.maxWidth = '100%';
+      el.style.height = el.style.height || 'auto';
+    }
+
+    function makeCard(item) {
+      const card = el('article', 'card');
+
+      // 1) Visible image: b{base}
+      const img = new Image();
+      img.src = `${VISIBLE_PREFIX}${item.base}`;
+      img.alt = (item.tip || item.top || item.base || '').toString();
+      img.className = 'media';
+      applySize(img, item.w, item.h);
+      card.appendChild(img);
+
+      // Control bar: hint + button (for click-to-toggle)
+      const meta = el('div', 'meta');
+      
+      const btn = el('button', 'toggle', 'show');
+      btn.setAttribute('aria-expanded', 'false');
+      btn.addEventListener('click', () => {
+        const open = card.classList.toggle('show');
+        btn.textContent = open ? 'hide' : 'show';
+        btn.setAttribute('aria-expanded', String(open));
+      });
+      meta.appendChild(btn);
+      card.appendChild(meta);
+
+      // 2) Hidden lines: title (tip/top), hidden image a{base}, info1, info2
+      const hidden = el('div', 'hidden');
+
+      // Title line (use tip; fallback to top if present)
+      if (item.tip || item.top) {
+        hidden.appendChild(el('h2', 'title', String(item.tip || item.top)));
+      }
+
+      // Hidden image: a{base}
+      if (item.base) {
+        const lineImg = el('div', 'line');
+        const imgA = new Image();
+        imgA.src = `${HIDDEN_PREFIX}${item.base}`;
+        imgA.alt = `Alternate / companion image for ${item.tip || item.base}`;
+        applySize(imgA, item.w, item.h);
+        // If the a{base} image is missing, fail silently (hide the line)
+        imgA.addEventListener('error', () => { lineImg.remove(); });
+        lineImg.appendChild(imgA);
+        hidden.appendChild(lineImg);
+      }
+
+			if (item.info1) appendInfo(hidden, item.info1);
+			if (item.info2) appendInfo(hidden, item.info2);
+      
+      card.appendChild(hidden);
+      return card;
+    }
+
+    const app = document.getElementById('app');
+    DATA.forEach(row => app.appendChild(makeCard(row)));
+  </script>
+</body>
+</html>

@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Pointrets: grid</title>
+<style>
+  html, body {
+    background: #000; margin: 0; padding: 0;
+  }
+  #container {
+  	margin: 40px auto; /* auto centers horizontally */
+    position: relative;
+    width: 800px;   /* display size */
+    height: 600px;  /* display size */
+    /* border: 1px solid #333; */
+    overflow: hidden;
+    background: #000;
+  }
+  .tile {
+    position: absolute;
+    object-fit: cover;  /* use 'fill' if you want exact stretch */
+    cursor: pointer;
+    transition: opacity 100ms ease;
+  	/*border: 1px solid white;   /* add this */
+  	box-sizing: border-box;    /* ensures border doesn’t affect sizing */
+  }
+  .tooltip {
+    position: fixed;
+    padding: 6px 8px;
+    font: 12px/1.2 Arial, sans-serif;
+    background: rgba(0,0,0,0.85);
+    color: #fff;
+    border-radius: 6px;
+    white-space: nowrap;
+    pointer-events: none;     /* don't block clicks */
+    /* transform: translate(-50%, -8px); /* center above */
+    z-index: 9999;
+    display: none;            /* hidden by default */
+  }
+  .tooltip.show { display: block; }
+</style>
+</head>
+<body>
+<div style="font-size: 16px; place-items: left; justify-self:start; align-self:start; margin:10px;">
+<a href="grid.html" style="color:white; font-family:Arial; text-decoration: none;" title='Flip cards, portrait titles'>grid</a> 
+&nbsp;&nbsp;
+<a href="list.html" style="color:white; font-family:Arial;" title='Scroll, extra info'>list</a>
+&nbsp;&nbsp;
+<a href="block.html" style="color:white; font-family:Arial;" title='Flip whole block, no info'>block</a>
+</div>
+<div id="container"></div>
+
+<script>
+// ----- CONFIG -----
+const imgDir = "";          // e.g. "images/" if your PNGs live in /images
+const modeTooltip = "click";    // "hover" OR "click"
+const useCover = true;      // set false to 'fill' instead of 'cover'
+
+// Reference coordinate system size (what l/r/t/b are measured in)
+const refWidth  = 12.45;  // width of original coordinate space
+const refHeight = 9.18;   // height of original coordinate space
+
+// Display container
+const container = document.getElementById("container");
+const W = container.clientWidth;
+const H = container.clientHeight;
+
+// Example table: base file name "XXX.png" + coords (in ref units)
+const table = [
+{base: 'vulture.png', l: 1.414,  r: 2.727, t: 0.068, b: 1, tip: '1993: The Struggling Girl (Kevin Carter)'},
+{base: 'jobs.png', l: 2.777,  r: 3.727, t: 0.068, b: 1.364, tip: '2006: Steve Jobs (Albert Watson)'},
+{base: 'bluered.png', l: 3.777,  r: 4.727, t: 0.068, b: 1.364, tip: '1880: Self-portrait (Vincent Van Gogh)'},
+{base: 'gagarin.png', l: 4.777,  r: 5.727, t: 0.432, b: 1.364, tip: '1961: Юрий Гагарин (Совфото)'},
+{base: 'peach.png', l: 5.777,  r: 6.727, t: 0.432, b: 1.727, tip: '1887: Девочка с персиками (Валентин Серов)'},
+{base: 'maya.png', l: 6.777,  r: 7.727, t: 0.432, b: 1.727, tip: '1920: Маяковский (unknown)'},
+{base: 'square.png', l: 7.777,  r: 9.091, t: 0.795, b: 1.727, tip: '1989: Tank Man (Jeff Widener)'},
+{base: 'banksy.png', l: 9.141,  r: 10.455, t: 0.795, b: 1.727, tip: '2002: Balloon Girl (Banksy)'},
+{base: 'scream.png', l: 10.505,  r: 11.455, t: 0.795, b: 2.091, tip: '1893: The Scream (Edvard Munch)'},
+{base: 'pink.png', l: 0.777,  r: 1.727, t: 1.068, b: 2.364, tip: '1961: Breakfast at Tiffanys (Blake Edwards)'},
+{base: 'napoleon.png', l: 1.777,  r: 2.727, t: 1.068, b: 2.364, tip: '1840: Napoleon at Fontainebleau (Paul Delaroche)'},
+{base: 'dali.png', l: 2.777,  r: 3.727, t: 1.432, b: 2.364, tip: '1954: Spanish painter Salvador Dali (Philippe Halsman)'},
+{base: 'audrey_hands.png', l: 3.777,  r: 4.727, t: 1.432, b: 2.727, tip: '1950: Audrey Hepburn (unknown)'},
+{base: 'sailor.png', l: 4.777,  r: 5.727, t: 1.432, b: 2.727, tip: '1945: V-J Day in Times Square (Alfred Eisenstaedt)'},
+{base: 'whistler_Mother.png', l: 5.777,  r: 7.091, t: 1.795, b: 2.727, tip: '1871: Whistlers Mother (James Whistler)'},
+{base: 'pulp.png', l: 7.141,  r: 8.455, t: 1.795, b: 2.727, tip: '1994: Pulp Fiction (Quentin Tarantino)'},
+{base: 'hitchhock.png', l: 8.505,  r: 9.455, t: 1.795, b: 3.091, tip: '1960: Alfred Hitchcock (unknown)'},
+{base: 'renoir_JeanneSamary.png', l: 9.505,  r: 10.455, t: 1.795, b: 3.091, tip: '1877: The Day Dream (Pierre-Auguste Renoir)'},
+{base: 'che.png', l: 10.505,  r: 11.455, t: 2.159, b: 3.091, tip: '1960: Che Guevara (Alberto Korda)'},
+{base: 'monroe_set.png', l: 11.505,  r: 12.455, t: 2.159, b: 3.455, tip: '1954: The Seven Year Itch (Billy Wilder)'},
+{base: 'sparrow.png', l: 0.414,  r: 1.364, t: 2.432, b: 3.364, tip: '2003: Pirates of the Caribbean (Gore Verbinski)'},
+{base: 'johny.png', l: 1.414,  r: 2.364, t: 2.432, b: 3.727, tip: '1980: The Shining (Stanley Kubrick)'},
+{base: 'kiss.png', l: 2.414,  r: 3.364, t: 2.432, b: 3.727, tip: '1908: The Kiss (Gustav Klimt)'},
+{base: 'adam.png', l: 3.414,  r: 4.727, t: 2.795, b: 3.727, tip: '1512: The Creation of Adam (Michelangelo)'},
+{base: 'demon.png', l: 4.777,  r: 6.091, t: 2.795, b: 3.727, tip: '1890: Демон Сидящий (Михаил Врубель)'},
+{base: 'hamming.png', l: 6.141,  r: 7.091, t: 2.795, b: 4.091, tip: '1957: Ernest Hemingway (Yousuf Karsh)'},
+{base: 'joconda.png', l: 7.141,  r: 8.091, t: 2.795, b: 4.091, tip: '1506: Gioconda (Leonardo da Vinci)'},
+{base: 'lilu.png', l: 8.141,  r: 9.091, t: 3.159, b: 4.091, tip: '1997: The Fifth Element (Luc Besson)'},
+{base: 'pearl.png', l: 9.141,  r: 10.091, t: 3.159, b: 4.455, tip: '1665: Girl with a Pearl Earring (Johannes Vermeer)'},
+{base: 'audrey_tall.png', l: 10.141,  r: 11.091, t: 3.159, b: 4.455, tip: '1961: Breakfast at Tiffanys (Blake Edwards)'},
+{base: 'rockafeller.png', l: 11.141,  r: 12.455, t: 3.523, b: 4.455, tip: '1932: Lunch atop a Skyscraper (unclear)'},
+{base: 'venus.png', l: 0.05,  r: 1, t: 3.432, b: 4.727, tip: '1486: The Birth of Venus (Sandro Botticelli)'},
+{base: 'ghandy.png', l: 1.05,  r: 2.364, t: 3.795, b: 4.727, tip: '1946: Gandhi and His Spinning Wheel (Margaret Bourke-White)'},
+{base: 'amelie.png', l: 2.414,  r: 3.727, t: 3.795, b: 4.727, tip: '2001: Amelie (Jean-Pierre Jeunet)'},
+{base: 'enstein.png', l: 3.777,  r: 4.727, t: 3.795, b: 5.091, tip: '1951: Einsteins tongue (Arthur Sasse)'},
+{base: 'frida.png', l: 4.777,  r: 5.727, t: 3.795, b: 5.091, tip: '1940: Thorn Necklace and Hummingbird (Frida Kahlo)'},
+{base: '_malevich.png', l: 5.777,  r: 6.727, t: 4.159, b: 5.091, tip: '1915: Черный квадрат (Казимир Малевич)'},
+{base: 'pushkin.png', l: 6.777,  r: 7.727, t: 4.159, b: 5.455, tip: '1827: Портрет Пушкина (Орест Кипренского)'},
+{base: 'wecandoit.png', l: 7.777,  r: 8.727, t: 4.159, b: 5.455, tip: '1943: We Can Do It! (Howard Miller)'},
+{base: 'curbet_DesparateMan.png', l: 8.777,  r: 10.091, t: 4.523, b: 5.455, tip: '1845: Le Désespéré (Gustave Courbet)'},
+{base: 'kramskoy_Neizvestnaya.png', l: 10.141,  r: 11.455, t: 4.523, b: 5.455, tip: '1883: Неизвестная (Иван Крамской)'},
+{base: 'archimboldo.png', l: 11.505,  r: 12.455, t: 4.523, b: 5.818, tip: '1591: Vertumnus (Giuseppe Arcimboldo)'},
+{base: 'joker.png', l: 0.05,  r: 1.364, t: 4.795, b: 5.727, tip: '2008: The Dark Knight (Christopher Nolan)'},
+{base: 'obama.png', l: 1.414,  r: 2.364, t: 4.795, b: 6.091, tip: '2008: Hope (Shepard Fairey)'},
+{base: 'andy.png', l: 3.414,  r: 4.364, t: 5.159, b: 6.091, tip: '1967: Shot Marilyns (Andy Warhol)'},
+{base: 'vanEyck_Arnolfini.png', l: 2.414,  r: 3.364, t: 4.795, b: 6.091, tip: '1434: Arnolfini Portrait (Jan van Eyck)'},
+{base: 'liepke_resting.png', l: 4.414,  r: 5.364, t: 5.159, b: 6.455, tip: '2016: Resting (Malcolm Liepke)'},
+{base: 'milk.png', l: 5.414,  r: 6.364, t: 5.159, b: 6.455, tip: '1658: The Milkmaid (Johannes Vermeer)'},
+{base: 'fournier_OmayraSanchez.png', l: 6.414,  r: 7.727, t: 5.523, b: 6.455, tip: '1985: Omayra Sánchez (Frank Fournier)'},
+{base: 'alenushka.png', l: 7.777,  r: 9.091, t: 5.523, b: 6.455, tip: '1881: Алёнушка (Виктор Васнецов)'},
+{base: 'fisherman.png', l: 9.141,  r: 10.091, t: 5.523, b: 6.818, tip: '1902: Old Fisherman (Tivadar Kosztka)'},
+{base: 'hat.png', l: 10.141,  r: 11.091, t: 5.523, b: 6.818, tip: '1887: Straw Hat (Vincent Van Gogh)'},
+{base: 'beatles.png', l: 11.141,  r: 12.091, t: 5.886, b: 6.818, tip: '1969: Abbey Road (Beatles)'},
+{base: 'monroe_life.png', l: 0.05,  r: 1, t: 5.795, b: 7.091, tip: '1954: Flying Skirt (Sam Shaw)'},
+{base: 'apple.png', l: 1.05,  r: 2, t: 6.159, b: 7.091, tip: '1964: The Son of Man (René Magritte)'},
+{base: 'sean.png', l: 2.05,  r: 3, t: 6.159, b: 7.455, tip: '1992: Sean Penn (Mark Seliger)'},
+{base: 'serebryakova_self.png', l: 3.05,  r: 4, t: 6.159, b: 7.455, tip: '1909: За туалетом (Зинаида Серебрякова)'},
+{base: 'neo.png', l: 4.05,  r: 5.364, t: 6.523, b: 7.455, tip: '1999: The Matrix (The Wachowskis)'},
+{base: 'putin.png', l: 5.414,  r: 6.727, t: 6.523, b: 7.455, tip: '2007: Владимир Путин (Platon)'},
+{base: 'vendetta.png', l: 6.777,  r: 7.727, t: 6.523, b: 7.818, tip: '2005: V for Vendetta (James McTeigue)'},
+{base: 'chrch.png', l: 7.777,  r: 8.727, t: 6.523, b: 7.818, tip: '1941: The Roaring Lion (Yousuf Karsh)'},
+{base: 'ali.png', l: 8.777,  r: 9.727, t: 6.886, b: 7.818, tip: '1965: Muhammad Ali vs. Sonny Liston, (Neil Leifer)'},
+{base: 'pipe.png', l: 9.777,  r: 10.727, t: 6.886, b: 8.182, tip: '1889: Bandaged Ear and Pipe (Vincent Van Gogh)'},
+{base: 'sargent_MadameX.png', l: 10.777,  r: 11.727, t: 6.886, b: 8.182, tip: '1884: Madame X (John Sargent)'},
+{base: 'afgan.png', l: 0.686,  r: 1.636, t: 7.159, b: 8.455, tip: '1984: Afghan Girl (Steve McCurry)'},
+{base: 'valuev.png', l: 1.686,  r: 3, t: 7.523, b: 8.455, tip: '2008: Наколай Валуев (Игорь Сахаров)'},
+{base: 'post.png', l: 3.05,  r: 4.364, t: 7.523, b: 8.455, tip: '1889: Portrait of Joseph Roulin (Vincent Van Gogh)'},
+{base: 'wood_AmericanGothic.png', l: 4.414,  r: 5.364, t: 7.523, b: 8.818, tip: '1930: American Gothic (Grant Wood)'},
+{base: 'hitler.png', l: 5.414,  r: 6.364, t: 7.523, b: 8.818, tip: '1928: Adolf Hitler (Heinrich Hoffmann)'},
+{base: 'lenon.png', l: 6.414,  r: 7.364, t: 7.886, b: 9.182, tip: '1980: John and Yoko Lennon (Annie Leibovitz)'},
+{base: 'ermine.png', l: 7.414,  r: 8.364, t: 7.886, b: 9.182, tip: '1491: Lady with an Ermine (Leonardo da Vinci)'},
+{base: 'sam.png', l: 8.414,  r: 9.364, t: 7.886, b: 9.182, tip: '1917: I Want You For U.S. Army (James Flagg)'},
+{base: 'flag.png', l: 9.414,  r: 10.727, t: 8.25, b: 9.182, tip: '1945: Raising the Flag on Iwo Jima (Joe Rosenthal)'},
+];
+
+// ----- UTILITIES -----
+function variantSrc(base, variant) {
+  // variant is 'a' or 'b'; filenames are aXXX.png / bXXX.png
+  return imgDir + variant + base;
+}
+
+function preload(srcs) {
+  srcs.forEach(s => { const i = new Image(); i.src = s; });
+}
+
+// ----- RENDER -----
+const scaleX = W / refWidth;
+const scaleY = H / refHeight;
+
+// a single tooltip element reused for all tiles
+const tipEl = document.createElement("div");
+tipEl.className = "tooltip";
+container.appendChild(tipEl);
+
+function positionTooltipForOLD(img) {
+  // center tooltip above the tile
+  const rect = img.getBoundingClientRect();
+  const cRect = container.getBoundingClientRect();
+  const centerX = rect.left + rect.width / 2 - cRect.left;
+  const topY = rect.top - cRect.top; // top edge within container
+  tipEl.style.left = `${centerX}px`;
+  tipEl.style.top  = `${topY}px`;
+}
+function positionTooltipFor(el, text) {
+  tipEl.textContent = text;
+  tipEl.style.display = "block"; // show to measure size
+
+  const rect = el.getBoundingClientRect();
+  const tw = tipEl.offsetWidth;
+  const th = tipEl.offsetHeight;
+  const margin = 8;
+
+  // Prefer above; if not enough space, place below
+  let top = rect.top - th - margin;
+  if (top < margin) top = rect.bottom + margin;
+
+  // Center horizontally, then clamp to viewport
+  let left = rect.left + rect.width / 2 - tw / 2;
+  left = Math.max(margin, Math.min(left, window.innerWidth - tw - margin));
+
+  tipEl.style.top = `${Math.round(top)}px`;
+  tipEl.style.left = `${Math.round(left)}px`;
+  tipEl.classList.add("show");
+
+  activeTarget = el;
+}
+
+
+table.forEach((row, idx) => {
+  // scale coords
+  const l_px = row.l * scaleX;
+  const r_px = row.r * scaleX;
+  const b_px = row.b * scaleY;
+  const t_px = row.t * scaleY;
+
+  const x = l_px;
+  const y = t_px;
+  const w = r_px - l_px;
+  const h = b_px - t_px;
+
+  // create <img>
+  const img = document.createElement("img");
+  img.className = "tile";
+  img.alt = row.base;
+  img.dataset.base = row.base;
+  img.dataset.variant = "b"; // default
+  img.style.left   = x + "px";
+  img.style.top    = y + "px";
+  img.style.width  = w + "px";
+  img.style.height = h + "px";
+  img.style.objectFit = useCover ? "cover" : "fill";
+
+  // preload both variants, set default src=bXXX.png
+  const srcB = variantSrc(row.base, "b");
+  const srcA = variantSrc(row.base, "a");
+  const tipText = row.tip || "";
+  preload([srcA, srcB]);
+  img.src = srcB;
+
+  // toggle on click
+  img.addEventListener("click", () => {
+    const cur = img.dataset.variant;
+    const next = cur === "b" ? "a" : "b";
+    img.dataset.variant = next;
+    img.src = variantSrc(img.dataset.base, next);
+    // toggle tooltip visibility
+    if (tipEl.classList.contains("show") && tipEl.textContent === tipText) {
+    	tipEl.style.display = "none";
+      tipEl.classList.remove("show");
+    } else {
+      tipEl.textContent = tipText;
+      positionTooltipFor(img,tipEl.textContent);
+      //positionTooltipForOLD(img);
+      tipEl.classList.add("show");
+    }
+  });
+ 	// click outside to hide
+  document.addEventListener("click", (e) => {
+    if (!container.contains(e.target)){
+    	tipEl.classList.remove("show"); 
+    	tipEl.style.display = "none";
+    }
+  });
+  container.appendChild(img);
+});
+</script>
+</body>
+</html>

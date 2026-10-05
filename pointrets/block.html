@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Pointrets: block</title>
+
+<!-- Preload images -->
+<link rel="preload" as="image" href="poster_vec.png">
+<link rel="preload" as="image" href="poster_pic.png">
+
+<style>
+  html{
+  	height: 100%;
+  	margin: 0; padding: 0;
+  	background: #111;  	
+  }
+  
+  body {
+    height: 100%;
+    margin: 0; padding: 0;
+    background: #111;
+    display: grid;
+    place-items: center;
+  }
+
+  /* Use only 90% of the viewport, centered */
+  .stage {
+    width: 90vw;
+    height: 90vh;
+    display: grid;
+    place-items: start center;
+    background: #000;           /* letterbox around the image */
+    /* lock state: none|on|off (set by JS) */
+  }
+
+  /* Stack images, size to fit box while preserving aspect */
+  .stage img {
+    grid-area: 1 / 1;
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    display: block;
+    user-select: none;
+    -webkit-user-drag: none;
+  }
+
+  /* Top image: no animation */
+  .img-top {
+    opacity: 0;
+    pointer-events: none;       /* clicks go to base img */
+    transition: none;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Hover works ONLY when unlocked */
+  .stage[data-lock="none"] .img-base:hover + .img-top { opacity: 1; }
+
+  /* Click lock overrides hover unconditionally */
+  .stage[data-lock="on"]  .img-top { opacity: 1; }   /* locked to photo */
+  .stage[data-lock="off"] .img-top { opacity: 0; }   /* locked to vector */
+
+  .img-base { cursor: pointer; }
+</style>
+</head>
+<body>
+<div style="font-size: 16px; place-items: left; justify-self:start; align-self:start; margin:10px;">
+<a href="grid.html" style="color:white; font-family:Arial;" title='Flip cards, portrait titles'>grid</a> 
+&nbsp;&nbsp;
+<a href="list.html" style="color:white; font-family:Arial;" title='Scroll, extra info'>list</a>
+&nbsp;&nbsp;
+<a href="block.html" style="color:white; font-family:Arial; text-decoration: none;" title='Flip whole block, no info'>block</a>
+</div>
+  <div class="stage" data-lock="none" aria-label="Poster">
+    <!-- Base (vector) image: hover/click target -->
+    <img src="poster_vec.png" alt="Poster vector"
+         class="img-base" role="button" tabindex="0" aria-pressed="false">
+    <!-- Overlay (photo) image -->
+    <img src="poster_pic.png" alt="Poster photo" class="img-top">
+  </div>
+
+<script>
+(function () {
+  const stage = document.querySelector('.stage');
+  const base  = document.querySelector('.img-base');
+
+  function setLock(val) {
+    stage.setAttribute('data-lock', val);              // 'none' | 'on' | 'off'
+    base.setAttribute('aria-pressed', val === 'on' ? 'true' : 'false');
+  }
+
+  // Click ALWAYS toggles between locked on/off (ignores hover)
+  base.addEventListener('click', (e) => {
+    e.preventDefault();
+    const cur = stage.getAttribute('data-lock');
+    // First click from 'none' locks to 'on'
+    if (cur === 'none') setLock('on');
+    else setLock(cur === 'on' ? 'off' : 'on');
+  });
+
+  // Keyboard accessibility: Space / Enter toggle
+  base.addEventListener('keydown', (e) => {
+    if (e.key === ' ' || e.key === 'Enter') {
+      e.preventDefault();
+      base.click();
+    }
+  });
+
+  // Optional: press Escape to return to hover mode (unlock)
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') setLock('none');
+  });
+})();
+</script>
+
+</body>
+</html>
