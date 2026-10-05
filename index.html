@@ -131,10 +131,10 @@
           <a href="https://tumblr.com/duhe" target="_blank">tumblr</a>
           <a href="https://tumblr.com/hihidu" target="_blank">memes</a>
           <a class="img-tooltip" href="https://omicsapp.com/pointret/block.html"  data-tooltip-img="./img/pointrets.png" target="_blank">pointrets</a>
-          <a href="https://leprosorium.ru/users/duhe" data-tooltip-img="./img/lepra.png" target="_blank">lepra</a>
+          <a class="img-tooltip" href="https://leprosorium.ru/users/duhe" data-tooltip-img="./img/lepra.png" target="_blank">lepra</a>
         </div>
-        <button id="helloBtn">What's this?</button>
         <img id="img-tooltip-popup" alt="">
+        <button id="helloBtn">What's this?</button>
         <p id="output"></p>
     </div>
     
@@ -145,79 +145,94 @@
 
     btn.addEventListener("click", function () {
         if (output.textContent === "") {
-            output.innerHTML = 'A button!<br><span style="font-size: 8px;">[tap-tap tap-tap-tap]</span>';
+            output.innerHTML =
+                'A button!<br><span style="font-size: 8px;">[tap-tap tap-tap-tap]</span>';
         } else {
             output.textContent = "";
         }
     });
+
+
+    // --------------------------------------------------------
+    // Secret links tap pattern
+    // --------------------------------------------------------
 
     const box = document.querySelector(".box");
     const secretLinks = document.querySelector(".secret-links");
 
     let taps = [];
     let resetTimer;
-    
+
     box.addEventListener("click", function (event) {
-        // Don't count clicks on the secret links as taps
+
+        // Don't count clicks on secret links as taps
         if (event.target.closest(".secret-links")) {
-        return;
-    }
-
-    const now = Date.now();
-    taps.push(now);
-    clearTimeout(resetTimer);
-
-    // Keep only the latest 5 taps
-    if (taps.length > 5) {
-        taps.shift();
-    }
-
-    if (taps.length === 5) {
-        const intervals = [
-            taps[1] - taps[0],
-            taps[2] - taps[1],
-            taps[3] - taps[2],
-            taps[4] - taps[3]
-        ];
-        const pattern =
-            intervals[0] < 400 &&       // tap tap
-            intervals[1] >= 500 &&      // PAUSE
-            intervals[1] < 1500 &&
-            intervals[2] < 400 &&       // tap tap tap
-            intervals[3] < 400;
-        if (pattern) {
-            secretLinks.classList.toggle("visible");
-            taps = [];
             return;
         }
-    }
 
-    // Start over if another tap doesn't arrive soon
-    resetTimer = setTimeout(() => {
-        taps = [];
-    }, 1500);
+        const now = Date.now();
+
+        taps.push(now);
+        clearTimeout(resetTimer);
+
+        // Keep only latest 5 taps
+        if (taps.length > 5) {
+            taps.shift();
+        }
+
+        if (taps.length === 5) {
+
+            const intervals = [
+                taps[1] - taps[0],
+                taps[2] - taps[1],
+                taps[3] - taps[2],
+                taps[4] - taps[3]
+            ];
+
+            const pattern =
+                intervals[0] < 400 &&
+                intervals[1] >= 500 &&
+                intervals[1] < 1500 &&
+                intervals[2] < 400 &&
+                intervals[3] < 400;
+
+            if (pattern) {
+                secretLinks.classList.toggle("visible");
+                taps = [];
+                return;
+            }
+        }
+
+        resetTimer = setTimeout(() => {
+            taps = [];
+        }, 1500);
+
+    });
+
+
+    // --------------------------------------------------------
+    // Image tooltips
+    // --------------------------------------------------------
 
     const tooltip = document.getElementById("img-tooltip-popup");
-    
+
     document.querySelectorAll(".img-tooltip").forEach(link => {
-    
+
         link.addEventListener("mouseenter", function () {
+
             const r = link.getBoundingClientRect();
-    
+
             tooltip.src = link.dataset.tooltipImg;
             tooltip.style.left = r.left + "px";
             tooltip.style.top = (r.bottom + 10) + "px";
             tooltip.style.display = "block";
         });
-    
+
         link.addEventListener("mouseleave", function () {
             tooltip.style.display = "none";
         });
-    
+
     });
-
-
-    
 </script>
 </body>
 </html>
