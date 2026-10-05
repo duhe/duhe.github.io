@@ -110,23 +110,34 @@
         .secret-links a:hover {
            text-decoration: underline;
         }
+        #pointrets-tooltip {
+            display: none;
+            position: fixed;
+            width: 300px;
+            height: auto;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            z-index: 1000;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
     <div class="box">
         <h1>duhe</h1>
         <p>duhe rulez!</p>
-        <div class="version">v018</div>
+        <div class="version">v020</div>
         <div class="secret-links">
           <a href="https://tumblr.com/duhe" target="_blank">tumblr</a>
           <a href="https://tumblr.com/hihidu" target="_blank">memes</a>
-          <a href="https://omicsapp.com/pointret/block.html" target="_blank">pointrets</a>a>
+          <a id="pointrets" href="https://omicsapp.com/pointret/block.html" target="_blank">pointrets</a>
           <a href="https://leprosorium.ru/users/duhe" target="_blank">lepra</a>
         </div>
         <button id="helloBtn">What's this?</button>
-
+        <img id="pointrets-tooltip" src="./img/pointrets.png" alt="">
         <p id="output"></p>
     </div>
+    
 
 <script>
     const btn = document.getElementById("helloBtn");
@@ -186,7 +197,22 @@
         taps = [];
     }, 1500);
 
-});
+    const pointrets = document.getElementById("pointrets");
+    const pointretsTooltip = document.getElementById("pointrets-tooltip");
+    
+    pointrets.addEventListener("mouseenter", function () {
+        const r = pointrets.getBoundingClientRect();
+    
+        pointretsTooltip.style.left = r.left + "px";
+        pointretsTooltip.style.top = (r.bottom + 10) + "px";
+        pointretsTooltip.style.display = "block";
+    });
+    
+    pointrets.addEventListener("mouseleave", function () {
+        pointretsTooltip.style.display = "none";
+    });
+    
+    });
 
 
     
