@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Poster Hover (instant, image-only hover, 90%)</title>
+
+<!-- Preload to avoid first-hover delay -->
+<link rel="preload" as="image" href="poster_vec.png">
+<link rel="preload" as="image" href="poster_pic.png">
+
+<style>
+  html, body {
+    height: 100%;
+    margin: 0;
+    background: #111;
+    display: grid;
+    place-items: center;
+  }
+
+  /* Use only 90% of the viewport, centered */
+  .stage {
+    width: 90vw;
+    height: 90vh;
+    display: grid;
+    place-items: center;
+    background: #000; /* letterbox around the image, if any */
+  }
+
+  /* Images stack and keep their natural aspect; hover only counts on the image box */
+  .stage img {
+    grid-area: 1 / 1;
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    display: block;
+    user-select: none;
+    -webkit-user-drag: none;
+  }
+
+  /* Top image: no transition = instantaneous swap */
+  .img-top {
+    opacity: 0;
+    pointer-events: none; /* pass hover to base img */
+    position: relative;
+    z-index: 1;
+    transition: none;
+  }
+
+  /* Show photo only when hovering the actual base image */
+  .img-base:hover + .img-top { opacity: 1; }
+
+  /* Touch fallback: show while pressing the image */
+  @media (hover: none) and (pointer: coarse) {
+    .img-base:active + .img-top { opacity: 1; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="stage" aria-label="Poster area">
+    <img src="poster_vec.png" alt="Poster vector" class="img-base">
+    <img src="poster_pic.png" alt="Poster photo" class="img-top">
+  </div>
+
+</body>
+</html>
