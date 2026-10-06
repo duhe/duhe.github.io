@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta name="version" content="v037">
+    <meta name="version" content="v038">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>duhe github</title>
@@ -222,26 +222,95 @@
 
     // --------------------------------------------------------
     // Image tooltips
+    // Mouse: hover preview, one click opens
+    // Touch: first tap preview, second tap opens
     // --------------------------------------------------------
-
+    
     const tooltip = document.getElementById("img-tooltip-popup");
-
+    
+    let armedLink = null;
+    
+    function showTooltip(link) {
+        const r = link.getBoundingClientRect();
+    
+        tooltip.src = link.dataset.tooltipImg;
+        tooltip.style.left = r.left + "px";
+        tooltip.style.top = (r.bottom + 10) + "px";
+        tooltip.style.display = "block";
+    }
+    
+    function hideTooltip() {
+        tooltip.style.display = "none";
+    }
+    
+    function isTouchDevice() {
+        return window.matchMedia("(hover: none), (pointer: coarse)").matches;
+    }
+    
     document.querySelectorAll(".img-tooltip").forEach(link => {
-
+    
+        // ----------------------------------------------------
+        // Desktop: hover
+        // ----------------------------------------------------
+    
         link.addEventListener("mouseenter", function () {
-
-            const r = link.getBoundingClientRect();
-
-            tooltip.src = link.dataset.tooltipImg;
-            tooltip.style.left = r.left + "px";
-            tooltip.style.top = (r.bottom + 10) + "px";
-            tooltip.style.display = "block";
+            if (!isTouchDevice()) {
+                showTooltip(link);
+            }
         });
-
+    
         link.addEventListener("mouseleave", function () {
-            tooltip.style.display = "none";
+            if (!isTouchDevice()) {
+                hideTooltip();
+            }
         });
-
+    
+    
+        // ----------------------------------------------------
+        // Touch: tap once = preview, tap again = follow link
+        // ----------------------------------------------------
+    
+        link.addEventListener("click", function (event) {
+    
+            // Mouse/trackpad: normal link behavior
+            if (!isTouchDevice()) {
+                return;
+            }
+    
+            // First tap, or tap on a different link
+            if (armedLink !== link) {
+                event.preventDefault();
+    
+                armedLink = link;
+                showTooltip(link);
+    
+                return;
+            }
+    
+            // Second tap on same link:
+            // do NOT preventDefault -> browser follows href
+            armedLink = null;
+            hideTooltip();
+        });
+    
+    });
+    
+    
+    // --------------------------------------------------------
+    // Touch: tapping elsewhere closes preview
+    // --------------------------------------------------------
+    
+    document.addEventListener("click", function (event) {
+    
+        if (!isTouchDevice()) {
+            return;
+        }
+    
+        if (!event.target.closest(".img-tooltip")) {
+            armedLink = null;
+            hideTooltip();
+        }
+    
     });
 </script>
 </body>
