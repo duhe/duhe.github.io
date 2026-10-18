@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta name="version" content="v038">
+    <meta name="version" content="v059">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>duhe github</title>
@@ -127,6 +127,113 @@
             z-index: 1000;
             pointer-events: none;
         }
+
+
+        /* ----------------------------------------------------
+           Border emitter + draggable bucket game
+           ---------------------------------------------------- */
+        #game-layer {
+            position: fixed;
+            inset: 0;
+            z-index: 900;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .border-emitter {
+            position: fixed;
+            border-radius: 50%;
+            background: #000;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 902;
+        }
+
+        .red-pixel {
+            position: fixed;
+            width: 4px;
+            height: 4px;
+            background: #c00000;
+            pointer-events: none;
+            z-index: 901;
+        }
+
+        #bucket {
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity .4s ease;
+            position: fixed;
+            left: auto;
+            right: 30px;
+            top: 330px;
+            width: 20px;
+            height: 29px;
+            box-sizing: border-box;
+            z-index: 950;
+            cursor: grab;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        #bucket.dragging {
+            cursor: grabbing;
+        }
+
+        /* Large invisible grab area around the visible bucket. */
+        #bucket-grab {
+            position: absolute;
+            inset: -22px;
+            pointer-events: auto;
+        }
+
+        /* Bucket has left/right/bottom borders, intentionally no top border. */
+        #bucket-shell {
+            position: absolute;
+            left: 3px;
+            right: 3px;
+            top: 3px;
+            bottom: 2px;
+            box-sizing: border-box;
+            border-left: 2.5px solid #333;
+            border-right: 2.5px solid #333;
+            border-bottom: 2.5px solid #333;
+            border-top: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        #bucket.active { opacity: 1; visibility: visible; }
+        #bucket-liquid {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: 0;
+            background: #c00000;
+            pointer-events: none;
+        }
+
+        /* One aligned block: full-width button, centered text, right-hand scale. */
+        #button-group { width: 205px; max-width: 100%; margin: 0 auto; }
+        #helloBtn { width: 100%; box-sizing: border-box; }
+        #button-row { position: relative; width: 100%; height: 56px; }
+        #button-copy { position: absolute; left: 50%; top: 0; transform: translateX(-50%); text-align: center; white-space: nowrap; }
+        #button-copy #output { margin: 10px 0; }
+        #game-stage { position: absolute; left: calc(50% + 45px); right: 0; top: 0; bottom: 0; display: none; pointer-events: none; }
+        #game-stage.open { display: block; }
+        /* Scale rises behind the baseline rather than showing below it. */
+        #game-stage { overflow: hidden; }
+        #rise-ground-mask { position: fixed; display: none; background: white; z-index: 960; pointer-events: none; }
+        #scale { position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); width: 40px; height: 40px; pointer-events: none; }
+        #scale-display { box-sizing: border-box; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 24px; height: 16px; border: 2px solid #555; border-radius: 4px; background: #e5e5e5; color: #777; font: bold 9px Arial; display: grid; place-items: center; transition: background .35s, color .35s; }
+        #scale-display.ready { background: #48b56b; color: white; }
+        #scale-stem { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); height: 4.5px; border-left: 2px solid #555; }
+        #scale-tray { box-sizing: border-box; position: absolute; left: 50%; transform: translateX(-50%); bottom: 20.5px; width: 26.7px; height: 6px; border: 2px solid #555; border-top: 0; border-radius: 0 0 3px 3px; }
+        #duhmpster-reveal { position: relative; max-height: 0; opacity: 0; overflow: hidden; transition: none; }
+        #duhmpster-reveal.unlocked { max-height: 45px; opacity: 1; }
+        #duhmpster-reveal a { color: #c00000; font-weight: bold; text-decoration: none; }
+        #duhmpster-reveal a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
@@ -142,10 +249,23 @@
           <a class="img-tooltip" href="https://leprosorium.ru/users/duhe/posts" data-tooltip-img="./img/lepra.png" target="_blank">lepra</a>
         </div>
         <img id="img-tooltip-popup" alt="">
-        <button id="helloBtn">What's this?</button>
-        <p id="output"></p>
+        <div id="button-group"><button id="helloBtn">What's this?</button>
+        <div id="button-row"><div id="button-copy"><p id="output"></p></div>
+        <div id="game-stage"><div id="scale"><div id="scale-tray"></div><div id="scale-stem"></div><div id="scale-display">0</div></div></div></div></div>
+        <div id="duhmpster-reveal"><a href="https://omicsapp.com/duhmpster" target="_blank" rel="noopener">duhmpster</a></div>
     </div>
-    
+
+
+    <div id="rise-ground-mask" aria-hidden="true"></div>
+    <div id="game-layer" aria-hidden="true"></div>
+
+    <div id="bucket" aria-label="draggable bucket">
+        <div id="bucket-grab"></div>
+        <div id="bucket-shell">
+            <div id="bucket-liquid"></div>
+        </div>
+    </div>
+
 
 <script>
 
@@ -160,6 +280,7 @@
         } else {
             output.textContent = "";
         }
+        updateStage();
     });
 
 
@@ -174,6 +295,11 @@
     let resetTimer;
 
     box.addEventListener("click", function (event) {
+
+        // Border-game clicks should not count toward the secret tap pattern.
+        if (event._borderGameHandled) {
+            return;
+        }
 
         // Don't count clicks on secret links as taps
         if (event.target.closest(".secret-links")) {
@@ -312,6 +438,594 @@
         }
     
     });
+
+    // --------------------------------------------------------
+    // Border emitter + draggable bucket
+    // --------------------------------------------------------
+
+    const gameLayer = document.getElementById("game-layer");
+    const bucket = document.getElementById("bucket");
+    const bucketGrab = document.getElementById("bucket-grab");
+    const bucketShell = document.getElementById("bucket-shell");
+    const bucketLiquid = document.getElementById("bucket-liquid");
+    const stage = document.getElementById("game-stage");
+    const scale = document.getElementById("scale");
+    const scaleDisplay = document.getElementById("scale-display");
+    const reveal = document.getElementById("duhmpster-reveal");
+    let leakOpened = false, bucketDocked = false, unlocked = false;
+    const SCALE_TARGET = 10;
+    let stageWasOpen = false;
+    let riseMaskTimer = null;
+    const groundMask = document.getElementById("rise-ground-mask");
+    function updateStage() {
+        const show = leakOpened && output.textContent !== "";
+        stage.classList.toggle("open", show);
+        bucket.classList.toggle("active", show);
+        // Preserve the docking state while hidden: otherwise a full bucket
+        // reappears on the tray but the scale incorrectly reads zero.
+        if (show && !bucketDrag) positionBucketAtStage();
+        updateScale();
+        clearTimeout(riseMaskTimer);
+        groundMask.style.display = "none";
+        if (show && !stageWasOpen) {
+            const rise = Math.max(42, scale.offsetHeight + bucketShell.offsetHeight + 12);
+            const timing = { duration: 1100, easing: 'cubic-bezier(.2,.75,.25,1)' };
+            // Fixed white mask covers only the space BELOW the final scale base.
+            // Its top edge stays stationary as both objects move up behind it.
+            const baseline = scaleDisplay.getBoundingClientRect().bottom;
+            const trayRect = document.getElementById("scale-tray").getBoundingClientRect();
+            groundMask.style.left = trayRect.left + 'px';
+            groundMask.style.width = trayRect.width + 'px';
+            groundMask.style.top = baseline + 'px';
+            // Stop the mask at the main box's INNER bottom border, not viewport bottom.
+            const boxRect = document.querySelector('.box').getBoundingClientRect();
+            const boxStyle = getComputedStyle(document.querySelector('.box'));
+            const innerBottom = boxRect.bottom - parseFloat(boxStyle.borderBottomWidth || 0) - 3;
+            groundMask.style.height = Math.max(0, innerBottom - baseline) + 'px';
+            groundMask.style.display = 'block';
+            // Prevent the moving scale/bucket from showing beyond the main box.
+            // This is a separate clipping boundary from the narrow ground mask.
+            const innerLeft = boxRect.left + 3;
+            const innerRight = boxRect.right - 3;
+            const innerTop = boxRect.top + 3;
+            const clipFor = (element) => {
+                const r = element.getBoundingClientRect();
+                const top = Math.max(0, innerTop - r.top);
+                const right = Math.max(0, r.right - innerRight);
+                const bottom = Math.max(0, r.bottom - innerBottom);
+                const left = Math.max(0, innerLeft - r.left);
+                element.style.clipPath = `inset(${top}px ${right}px ${bottom}px ${left}px)`;
+            };
+            // The bucket is a fixed-position sibling of the box.
+            // Clip it while animating; release clipping when finished.
+            const clipTimer = setInterval(() => clipFor(bucket), 16);
+            setTimeout(() => { clearInterval(clipTimer); bucket.style.clipPath = ''; }, 1120);
+            stage.animate([
+                { transform: `translateY(${rise}px)` },
+                { transform: 'translateY(0)' }
+            ], timing);
+            bucket.animate([
+                { transform: `translateY(${rise}px)` },
+                { transform: 'translateY(0)' }
+            ], timing);
+            riseMaskTimer = setTimeout(() => { groundMask.style.display = 'none'; }, 1120);
+        }
+        stageWasOpen = show;
+    }
+    function trayPosition() {
+        const r = document.getElementById("scale-tray").getBoundingClientRect();
+        return {x:(r.left+r.right)/2, y:r.bottom - 2};
+    }
+    function positionBucketAtStage() {
+        const t = trayPosition();
+        // Use layout offsets, not bounding rectangles measured at the OLD
+        // bucket position. The shell is inset 3px within the drag container.
+        const shellCenterOffset = bucketShell.offsetLeft + bucketShell.offsetWidth / 2;
+        const shellBottomOffset = bucketShell.offsetTop + bucketShell.offsetHeight;
+        bucket.style.right = "auto";
+        bucket.style.bottom = "auto";
+        bucket.style.left = (t.x - shellCenterOffset) + "px";
+        bucket.style.top = (t.y - shellBottomOffset) + "px";
+    }
+    function updateScale() {
+        const value = bucketDocked ? Math.round(bucketFillArea / (PARTICLE_SIZE * PARTICLE_SIZE)) : 0;
+        scaleDisplay.textContent = Math.min(666, value);
+        scaleDisplay.classList.toggle("ready", value >= SCALE_TARGET);
+        if (value >= SCALE_TARGET && !unlocked) {
+            unlocked = true;
+            reveal.classList.add("unlocked");
+        }
+    }
+    window.addEventListener("resize", () => { if (bucketDocked) positionBucketAtStage(); });
+
+    const emitters = [];
+    const particles = [];
+
+    const BORDER_HIT = 7;          // forgiving hit width around the visible border
+    const ACTIVE_RADIUS = 10;      // red border starts pumping at this radius
+    const PARTICLE_SIZE = 4;
+    const BOUNCINESS = 0.30; // 0 = dead impact, 1 = perfectly elastic
+    const PUMP_INTERVAL = 145;     // spacing between pixels while red band overlaps emitter
+    const MIN_SHOT_SPEED = 72;     // px/sec at weak red overlap
+    const MAX_SHOT_SPEED = 145;    // px/sec at strongest overlap
+    const SHOT_NOISE_DEG = 2.5;    // small random angular noise around 45 degrees
+    const GRAVITY = 250;           // px/sec^2
+
+    const EMITTER_MAX_RADIUS = ACTIVE_RADIUS; // stop growing once the emitter is fully powered
+    const SHAPE_IRREGULARITY = 0.17; // 0 = circular; higher = uneven silhouette
+    let bucketFillArea = 0;        // captured red area in px^2
+
+    function boxBorderPoint(clientX, clientY) {
+        const r = box.getBoundingClientRect();
+        const x = clientX - r.left;
+        const y = clientY - r.top;
+
+        const dLeft = x;
+        const dRight = r.width - x;
+        const dTop = y;
+        const dBottom = r.height - y;
+        const minD = Math.min(dLeft, dRight, dTop, dBottom);
+
+        if (minD > BORDER_HIT) return null;
+
+        // Snap to the OUTER rounded outline of .box. This puts the black
+        // circle's center exactly on the border instead of slightly inside it.
+        const radius = Math.max(0, parseFloat(getComputedStyle(box).borderTopLeftRadius) || 0);
+        let sx = x;
+        let sy = y;
+
+        const inLeft = x < radius;
+        const inRight = x > r.width - radius;
+        const inTop = y < radius;
+        const inBottom = y > r.height - radius;
+
+        if ((inLeft || inRight) && (inTop || inBottom) && radius > 0) {
+            const cx = inLeft ? radius : r.width - radius;
+            const cy = inTop ? radius : r.height - radius;
+            let dx = x - cx;
+            let dy = y - cy;
+            const len = Math.hypot(dx, dy) || 1;
+            sx = cx + dx / len * radius;
+            sy = cy + dy / len * radius;
+        } else if (minD === dLeft) {
+            sx = 0;
+        } else if (minD === dRight) {
+            sx = r.width;
+        } else if (minD === dTop) {
+            sy = 0;
+        } else {
+            sy = r.height;
+        }
+
+        return { x: r.left + sx, y: r.top + sy };
+    }
+
+    function pointIsOnBoxBorder(event) {
+        return event.target === box && boxBorderPoint(event.clientX, event.clientY) !== null;
+    }
+
+    function nearestEmitter(x, y, maxDistance = 14) {
+        let best = null;
+        let bestD = maxDistance;
+
+        for (const emitter of emitters) {
+            const d = Math.hypot(emitter.x - x, emitter.y - y);
+            if (d <= bestD) {
+                best = emitter;
+                bestD = d;
+            }
+        }
+        return best;
+    }
+
+    function makeShape(emitter) {
+        const n = 32;
+        emitter.shape = `polygon(${Array.from({length:n},(_,i)=>{
+            const a=2*Math.PI*i/n;
+            const r=.5*(1+SHAPE_IRREGULARITY*(Math.random()*2-1));
+            return `${50+100*r*Math.cos(a)}% ${50+100*r*Math.sin(a)}%`;
+        }).join(",")})`;
+    }
+    function drawEmitter(emitter) {
+        const d = emitter.radius * 2;
+        emitter.el.style.left = emitter.x + "px";
+        emitter.el.style.top = emitter.y + "px";
+        emitter.el.style.width = d + "px";
+        emitter.el.style.height = d + "px";
+        // Fixed per-emitter organic outline, so it does not change on each click.
+        emitter.el.style.clipPath = emitter.shape;
+    }
+
+    // Capture phase lets this mark border clicks before the existing tap-pattern
+    // click handler sees them.
+    box.addEventListener("click", function (event) {
+        if (!pointIsOnBoxBorder(event)) return;
+
+        event._borderGameHandled = true;
+
+        const snapped = boxBorderPoint(event.clientX, event.clientY);
+        if (!snapped) return;
+
+        let emitter = nearestEmitter(snapped.x, snapped.y);
+
+        if (!emitter) {
+            const el = document.createElement("div");
+            el.className = "border-emitter";
+            gameLayer.appendChild(el);
+
+            emitter = {
+                x: snapped.x,
+                y: snapped.y,
+                radius: 1,
+                shape: "",
+                lastPump: -Infinity,
+                anchorX: snapped.x - box.getBoundingClientRect().left,
+                anchorY: snapped.y - box.getBoundingClientRect().top,
+                anchorHeight: box.getBoundingClientRect().height,
+                el
+            };
+            makeShape(emitter);
+            emitters.push(emitter);
+        } else {
+            emitter.radius = Math.min(EMITTER_MAX_RADIUS, emitter.radius + 1);
+            makeShape(emitter);
+        }
+
+        drawEmitter(emitter);
+        if (emitter.radius >= ACTIVE_RADIUS && !leakOpened) { leakOpened = true; updateStage(); }
+    }, true);
+
+    // Keep emitters attached to the moving outline as the card changes height.
+    const boxResizeObserver = new ResizeObserver(() => {
+        const r = box.getBoundingClientRect();
+        for (const e of emitters) {
+            const nearBottom = e.anchorHeight - e.anchorY < 18;
+            const localY = nearBottom ? r.height - (e.anchorHeight - e.anchorY) : e.anchorY;
+            const snapped = boxBorderPoint(r.left + e.anchorX, r.top + localY);
+            if (snapped) { e.x = snapped.x; e.y = snapped.y; drawEmitter(e); }
+            e.anchorHeight = r.height;
+            e.anchorX = e.x - r.left;
+            e.anchorY = e.y - r.top;
+        }
+    });
+    boxResizeObserver.observe(box);
+
+    function normalizeDegrees(deg) {
+        deg %= 360;
+        return deg < 0 ? deg + 360 : deg;
+    }
+
+    // Read the actual CSS rotation of .box::before so the emitter pulse stays
+    // synchronized with the visible rotating red conic-gradient.
+    function borderRotationDegrees() {
+        const transform = getComputedStyle(box, "::before").transform;
+        if (!transform || transform === "none") return 0;
+
+        const match = transform.match(/^matrix\(([^)]+)\)$/);
+        if (!match) return 0;
+
+        const v = match[1].split(",").map(Number);
+        if (v.length < 2 || !v.every(Number.isFinite)) return 0;
+        return normalizeDegrees(Math.atan2(v[1], v[0]) * 180 / Math.PI);
+    }
+
+    // The visible gradient is: transparent 0%, red 15%, transparent 30%.
+    // On a 360-degree conic gradient this is a triangular red-intensity band
+    // from 0..108 degrees with its peak at 54 degrees.
+    function redBorderIntensityAt(emitter, rotationDeg) {
+        const r = box.getBoundingClientRect();
+        const cx = r.left + r.width / 2;
+        const cy = r.top + r.height / 2;
+
+        // CSS conic-gradient angles start at 12 o'clock and increase clockwise.
+        const screenAngle = normalizeDegrees(
+            Math.atan2(emitter.x - cx, -(emitter.y - cy)) * 180 / Math.PI
+        );
+        const localAngle = normalizeDegrees(screenAngle - rotationDeg);
+
+        if (localAngle > 108) return 0;
+        const gradientIntensity = localAngle <= 54
+            ? localAngle / 54
+            : (108 - localAngle) / 54;
+
+        // A just-activated 10px emitter has moderate coupling; growing it makes
+        // the same red-border pass pump harder, up to full coupling at 25px.
+        const radiusCoupling = Math.min(1, 0.55 + 0.45 * (emitter.radius - ACTIVE_RADIUS) / 15);
+        return Math.max(0, Math.min(1, gradientIntensity * radiusCoupling));
+    }
+
+    function shoot(emitter, now, intensity) {
+        const strength = Math.max(0, Math.min(1, intensity));
+        const speed = MIN_SHOT_SPEED + (MAX_SHOT_SPEED - MIN_SHOT_SPEED) * strength;
+
+        // Stronger overlap produces a slightly denser pulse as well as a faster one.
+        const count = 1 + Math.floor(strength * 2.2);
+
+        for (let n = 0; n < count; n++) {
+            const el = document.createElement("div");
+            el.className = "red-pixel";
+            gameLayer.appendChild(el);
+
+            const noiseDeg = (Math.random() * 2 - 1) * SHOT_NOISE_DEG;
+            const angle = (-45 + noiseDeg) * Math.PI / 180;
+
+            // Start just outside the black circle in the nominal upper-right direction.
+            const startAngle = -Math.PI / 4;
+            const x = emitter.x + Math.cos(startAngle) * emitter.radius;
+            const y = emitter.y + Math.sin(startAngle) * emitter.radius;
+
+            particles.push({
+                x,
+                y,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                lastTime: now,
+                el
+            });
+        }
+    }
+
+    function bucketInteriorRect() {
+        const r = bucketShell.getBoundingClientRect();
+        const cs = getComputedStyle(bucketShell);
+        const leftWall = parseFloat(cs.borderLeftWidth) || 0;
+        const rightWall = parseFloat(cs.borderRightWidth) || 0;
+        const bottomWall = parseFloat(cs.borderBottomWidth) || 0;
+
+        return {
+            left: r.left + leftWall,
+            right: r.right - rightWall,
+            top: r.top,
+            bottom: r.bottom - bottomWall,
+            width: r.width - leftWall - rightWall,
+            height: r.height - bottomWall
+        };
+    }
+
+    function bucketGeometry() {
+        const shell = bucketShell.getBoundingClientRect();
+        const cs = getComputedStyle(bucketShell);
+        const leftWall = parseFloat(cs.borderLeftWidth) || 0;
+        const rightWall = parseFloat(cs.borderRightWidth) || 0;
+        const bottomWall = parseFloat(cs.borderBottomWidth) || 0;
+        const inside = bucketInteriorRect();
+        const fillHeight = Math.min(inside.height, bucketFillArea / Math.max(1, inside.width));
+
+        return {
+            shell,
+            inside,
+            leftWall,
+            rightWall,
+            bottomWall,
+            liquidTop: inside.bottom - fillHeight,
+            fillHeight
+        };
+    }
+
+    function captureParticle(particle) {
+        bucketFillArea += PARTICLE_SIZE * PARTICLE_SIZE;
+
+        const inside = bucketInteriorRect();
+        const fillHeight = Math.min(inside.height, bucketFillArea / Math.max(1, inside.width));
+        bucketLiquid.style.height = fillHeight + "px";
+
+        particle.el.remove();
+        updateScale();
+    }
+
+    // Swept collision in relative coordinates: accounts for BOTH particle motion
+    // and bucket dragging between animation frames. Only the three solid walls
+    // participate; the open top is never a collider.
+    function bounceParticleOffBucket(p, prevX, prevY, geo, oldGeo) {
+        const half = PARTICLE_SIZE / 2;
+        const walls = [
+            [geo.shell.left, geo.inside.left, geo.shell.top + half, geo.shell.bottom],
+            [geo.inside.right, geo.shell.right, geo.shell.top + half, geo.shell.bottom]
+        ];
+        const oldWalls = [
+            [oldGeo.shell.left, oldGeo.inside.left, oldGeo.shell.top + half, oldGeo.shell.bottom],
+            [oldGeo.inside.right, oldGeo.shell.right, oldGeo.shell.top + half, oldGeo.shell.bottom]
+        ];
+        const dx = geo.shell.left - oldGeo.shell.left;
+        const dy = geo.shell.top - oldGeo.shell.top;
+        const rx = p.x - prevX - dx;
+        const ry = p.y - prevY - dy;
+        let best = null;
+        for (let i = 0; i < walls.length; i++) {
+            const [l, r, t, b] = oldWalls[i];
+            const minX = l - half, maxX = r + half;
+            const minY = t - half, maxY = b + half;
+            // If already embedded, do not invent an impact: allow separation.
+            if (prevX > minX && prevX < maxX && prevY > minY && prevY < maxY) continue;
+            let enter = -Infinity, exit = Infinity, axis = null, sign = 0;
+            for (const [pos, vel, lo, hi, ax] of [[prevX,rx,minX,maxX,'x'],[prevY,ry,minY,maxY,'y']]) {
+                if (Math.abs(vel) < 1e-9) {
+                    if (pos < lo || pos > hi) { enter = Infinity; break; }
+                } else {
+                    const a = (lo - pos) / vel, b = (hi - pos) / vel;
+                    const near = Math.min(a,b), far = Math.max(a,b);
+                    if (near > enter) { enter = near; axis = ax; sign = vel > 0 ? -1 : 1; }
+                    exit = Math.min(exit,far);
+                }
+            }
+            if (enter >= 0 && enter <= 1 && enter <= exit && (!best || enter < best.time)) {
+                best = {time:enter, axis, sign};
+            }
+        }
+        if (!best) return;
+        const impactX = prevX + (p.x - prevX) * best.time;
+        const impactY = prevY + (p.y - prevY) * best.time;
+        const remaining = 1 - best.time;
+        if (best.axis === 'x') {
+            const relative = p.vx - bucketVelocity.x;
+            p.vx = bucketVelocity.x - relative * BOUNCINESS;
+            p.x = impactX + best.sign * 0.02 + p.vx * frameDt * remaining;
+            p.y = impactY + p.vy * frameDt * remaining;
+        } else {
+            const relative = p.vy - bucketVelocity.y;
+            p.vy = bucketVelocity.y - relative * BOUNCINESS;
+            p.y = impactY + best.sign * 0.02 + p.vy * frameDt * remaining;
+            p.x = impactX + p.vx * frameDt * remaining;
+        }
+    }
+
+    function particleTouchesLiquid(p, prevY, geo) {
+        if (geo.fillHeight <= 0) return false;
+
+        const half = PARTICLE_SIZE / 2;
+        const insideX = p.x + half >= geo.inside.left && p.x - half <= geo.inside.right;
+        if (!insideX) return false;
+
+        // Absorb only on contact with the current red liquid surface/volume.
+        return p.y + half >= geo.liquidTop &&
+               prevY + half <= geo.inside.bottom &&
+               p.y - half <= geo.inside.bottom;
+    }
+
+    let previousBucketGeometry = null;
+    let previousFrameTime = null;
+    let frameDt = 0;
+    let bucketVelocity = {x:0,y:0};
+    function animateGame(now) {
+        frameDt = previousFrameTime === null ? 0 : Math.min((now - previousFrameTime) / 1000, 0.05);
+        previousFrameTime = now;
+        if (bucketDocked && !bucketDrag && stage.classList.contains("open")) positionBucketAtStage();
+        const currentGeo = bucketGeometry();
+        const oldGeo = previousBucketGeometry || currentGeo;
+        bucketVelocity = frameDt > 0 ? {
+            x: (currentGeo.shell.left - oldGeo.shell.left) / frameDt,
+            y: (currentGeo.shell.top - oldGeo.shell.top) / frameDt
+        } : {x:0,y:0};
+        previousBucketGeometry = currentGeo;
+        const rotationDeg = borderRotationDegrees();
+
+        // Emit only while the visible red border band is actually passing an
+        // active black circle. Red overlap controls both speed and pulse density.
+        for (const emitter of emitters) {
+            if (emitter.radius < ACTIVE_RADIUS) continue;
+
+            const intensity = redBorderIntensityAt(emitter, rotationDeg);
+            if (intensity > 0.08 && now - emitter.lastPump >= PUMP_INTERVAL) {
+                shoot(emitter, now, intensity);
+                emitter.lastPump = now;
+            }
+        }
+
+        for (let i = particles.length - 1; i >= 0; i--) {
+            const p = particles[i];
+            const dt = Math.min((now - p.lastTime) / 1000, 0.05);
+            p.lastTime = now;
+
+            const prevX = p.x;
+            const prevY = p.y;
+
+            p.vy += GRAVITY * dt;
+            p.x += p.vx * dt;
+            p.y += p.vy * dt;
+
+            const geo = currentGeo;
+
+            // The bucket's three solid walls are physical from both sides.
+            // A particle can ricochet outside the bucket or after entering it.
+            if (bucket.classList.contains("active")) bounceParticleOffBucket(p, prevX, prevY, geo, oldGeo);
+
+            // Once a drop reaches the inside bottom or liquid, absorb it permanently.
+            // Use the swept path so fast drops cannot skip the narrow bucket floor.
+            const half = PARTICLE_SIZE / 2;
+            const floorY = geo.inside.bottom - half;
+            const crossedFloor = prevY <= floorY && p.y >= floorY;
+            const fraction = crossedFloor && p.y !== prevY ?
+                (floorY - prevY) / (p.y - prevY) : 1;
+            const floorX = prevX + (p.x - prevX) * fraction;
+            const hitsFloor = crossedFloor &&
+                floorX >= geo.inside.left + half &&
+                floorX <= geo.inside.right - half;
+            if (bucket.classList.contains("active") && (hitsFloor || particleTouchesLiquid(p, prevY, geo))) {
+                captureParticle(p);
+                particles.splice(i, 1);
+                continue;
+            }
+
+            p.el.style.left = (p.x - PARTICLE_SIZE / 2) + "px";
+            p.el.style.top = (p.y - PARTICLE_SIZE / 2) + "px";
+
+            // Stop tracking as soon as the whole particle is beyond the viewport.
+            if (p.x < -PARTICLE_SIZE ||
+                p.x > innerWidth + PARTICLE_SIZE ||
+                p.y < -PARTICLE_SIZE ||
+                p.y > innerHeight + PARTICLE_SIZE) {
+                p.el.remove();
+                particles.splice(i, 1);
+            }
+        }
+
+        requestAnimationFrame(animateGame);
+    }
+
+    requestAnimationFrame(animateGame);
+
+    // --------------------------------------------------------
+    // Bucket drag: Pointer Events cover mouse, pen, and touch.
+    // --------------------------------------------------------
+
+    let bucketDrag = null;
+
+    bucketGrab.addEventListener("pointerdown", function (event) {
+        const r = bucket.getBoundingClientRect();
+
+        bucketDrag = {
+            pointerId: event.pointerId,
+            dx: event.clientX - r.left,
+            dy: event.clientY - r.top
+        };
+
+        bucketDocked = false;
+        updateScale();
+        bucket.classList.add("dragging");
+        bucketGrab.setPointerCapture(event.pointerId);
+        event.preventDefault();
+    });
+
+    bucketGrab.addEventListener("pointermove", function (event) {
+        if (!bucketDrag || event.pointerId !== bucketDrag.pointerId) return;
+
+        const pad = 10;
+        const w = bucket.offsetWidth;
+        const h = bucket.offsetHeight;
+
+        let left = event.clientX - bucketDrag.dx;
+        let top = event.clientY - bucketDrag.dy;
+
+        left = Math.max(-w + pad, Math.min(innerWidth - pad, left));
+        top = Math.max(-h + pad, Math.min(innerHeight - pad, top));
+
+        bucket.style.left = left + "px";
+        bucket.style.top = top + "px";
+        bucket.style.right = "auto";
+        bucket.style.bottom = "auto";
+    });
+
+    function stopBucketDrag(event) {
+        if (!bucketDrag || event.pointerId !== bucketDrag.pointerId) return;
+
+        bucket.classList.remove("dragging");
+        if (bucketGrab.hasPointerCapture(event.pointerId)) {
+            bucketGrab.releasePointerCapture(event.pointerId);
+        }
+        bucketDrag = null;
+        if (stage.classList.contains("open")) {
+            const t = trayPosition(), r = bucket.getBoundingClientRect();
+            if (Math.abs((bucketShell.getBoundingClientRect().left+bucketShell.getBoundingClientRect().right)/2-t.x)<26 && Math.abs(r.bottom-t.y)<30) {
+                bucketDocked = true;
+                positionBucketAtStage();
+            }
+        }
+        updateScale();
+    }
+
+    bucketGrab.addEventListener("pointerup", stopBucketDrag);
+    bucketGrab.addEventListener("pointercancel", stopBucketDrag);
+
 </script>
 </body>
 </html>
