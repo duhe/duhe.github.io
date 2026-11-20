@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta name="version" content="v069">
+    <meta name="version" content="v070">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>duhe github</title>
@@ -993,9 +993,9 @@
         const w = bucket.offsetWidth;
         const h = bucket.offsetHeight;
 
-				const f = bucketDrag.touch ? Math.min(1, (performance.now() - bucketDrag.start) / 500) : 0;
-				let left = event.clientX - bucketDrag.dx - 15 * f;
-				let top = event.clientY - bucketDrag.dy - 15 * f;
+				const f = bucketDrag.touch ? Math.min(1, (performance.now() - bucketDrag.start) / 1000) : 0;
+				let left = event.clientX - bucketDrag.dx - 5 * f;
+				let top = event.clientY - bucketDrag.dy - 5 * f;
         
         left = Math.max(-w + pad, Math.min(innerWidth - pad, left));
         top = Math.max(-h + pad, Math.min(innerHeight - pad, top));
