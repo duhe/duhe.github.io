@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta name="version" content="v070">
+    <meta name="version" content="v071">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>duhe github</title>
@@ -972,13 +972,14 @@
         const r = bucket.getBoundingClientRect();
 
         bucketDrag = {
-            pointerId: event.pointerId,
-						dx: event.clientX - r.left + (event.pointerType === 'touch' ? 35 : 0),
-						dy: event.clientY - r.top + (event.pointerType === 'touch' ? 55 : 0),
-						touch: event.pointerType === 'touch',
-						start: performance.now()
-        };
-
+				  pointerId: event.pointerId,
+				  dx: event.clientX - r.left,
+				  dy: event.clientY - r.top,
+				  touch: event.pointerType === 'touch',
+				  startX: event.clientX,
+				  startY: event.clientY
+				};
+				
         bucketDocked = false;
         updateScale();
         bucket.classList.add("dragging");
@@ -993,9 +994,11 @@
         const w = bucket.offsetWidth;
         const h = bucket.offsetHeight;
 
-				const f = bucketDrag.touch ? Math.min(1, (performance.now() - bucketDrag.start) / 1000) : 0;
-				let left = event.clientX - bucketDrag.dx - 5 * f;
-				let top = event.clientY - bucketDrag.dy - 5 * f;
+				const dist = Math.hypot(event.clientX - bucketDrag.startX, event.clientY - bucketDrag.startY);
+				const f = bucketDrag.touch ? Math.min(1, dist / 150) : 0;
+				
+				let left = event.clientX - bucketDrag.dx - 10 * f;
+				let top = event.clientY - bucketDrag.dy - 10 * f;       
         
         left = Math.max(-w + pad, Math.min(innerWidth - pad, left));
         top = Math.max(-h + pad, Math.min(innerHeight - pad, top));
