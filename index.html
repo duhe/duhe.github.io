@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta name="version" content="v066">
+    <meta name="version" content="v067">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>duhe github</title>
@@ -33,7 +33,7 @@
             transparent 0%,
             #c00000 15%,
             transparent 30%);
-            animation: spin 3s linear infinite;
+            transform: rotate(var(--rotation, 0deg));
         }
         
         .box::after {
@@ -700,16 +700,11 @@
     // Read the actual CSS rotation of .box::before so the emitter pulse stays
     // synchronized with the visible rotating red conic-gradient.
  
-		function borderRotationDegrees() {
-		    const anim = box.getAnimations({subtree: true})
-		        .find(a => a.effect?.target?.pseudoElement === '::before');
-		
-		    if (!anim) return 0;
-		
-		    const timing = anim.effect.getComputedTiming();
-		    return normalizeDegrees((timing.progress ?? 0) * 360);
-		}
+		const rotationStart = performance.now();
 
+		function borderRotationDegrees(now) {
+    	return ((now - rotationStart) * 360 / 3000) % 360;
+		}
     // The visible gradient is: transparent 0%, red 15%, transparent 30%.
     // On a 360-degree conic gradient this is a triangular red-intensity band
     // from 0..108 degrees with its peak at 54 degrees.
@@ -898,8 +893,9 @@
             y: (currentGeo.shell.top - oldGeo.shell.top) / frameDt
         } : {x:0,y:0};
         previousBucketGeometry = currentGeo;
-        const rotationDeg = borderRotationDegrees();
-
+				const rotationDeg = borderRotationDegrees(now);
+				box.style.setProperty('--rotation', rotationDeg + 'deg');
+				
         // Emit only while the visible red border band is actually passing an
         // active black circle. Red overlap controls both speed and pulse density.
         for (const emitter of emitters) {
