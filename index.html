@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta name="version" content="v071">
+    <meta name="version" content="v072">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>duhe github</title>
@@ -995,10 +995,10 @@
         const h = bucket.offsetHeight;
 
 				const dist = Math.hypot(event.clientX - bucketDrag.startX, event.clientY - bucketDrag.startY);
-				const f = bucketDrag.touch ? Math.min(1, dist / 150) : 0;
+				const f = bucketDrag.touch ? Math.min(1, dist / 250) : 0;
 				
-				let left = event.clientX - bucketDrag.dx - 10 * f;
-				let top = event.clientY - bucketDrag.dy - 10 * f;       
+				let left = event.clientX - bucketDrag.dx - 25 * f;
+				let top = event.clientY - bucketDrag.dy - 25 * f;       
         
         left = Math.max(-w + pad, Math.min(innerWidth - pad, left));
         top = Math.max(-h + pad, Math.min(innerHeight - pad, top));
