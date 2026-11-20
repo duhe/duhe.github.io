@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta name="version" content="v061">
+    <meta name="version" content="v062">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>duhe github</title>
@@ -697,17 +697,22 @@
 
     // Read the actual CSS rotation of .box::before so the emitter pulse stays
     // synchronized with the visible rotating red conic-gradient.
-    function borderRotationDegrees() {
-        const transform = getComputedStyle(box, "::before").transform;
-        if (!transform || transform === "none") return 0;
+    const rotationStart = performance.now();
 
-        const match = transform.match(/^matrix\(([^)]+)\)$/);
-        if (!match) return 0;
-
-        const v = match[1].split(",").map(Number);
-        if (v.length < 2 || !v.every(Number.isFinite)) return 0;
-        return normalizeDegrees(Math.atan2(v[1], v[0]) * 180 / Math.PI);
-    }
+		function borderRotationDegrees() {
+    		return ((performance.now() - rotationStart) / 3000 * 360) % 360;
+		}
+    #function borderRotationDegrees() {
+    #    const transform = getComputedStyle(box, "::before").transform;
+    #    if (!transform || transform === "none") return 0;
+    #
+    #    const match = transform.match(/^matrix\(([^)]+)\)$/);
+    #    if (!match) return 0;
+    #
+    #    const v = match[1].split(",").map(Number);
+    #    if (v.length < 2 || !v.every(Number.isFinite)) return 0;
+    #    return normalizeDegrees(Math.atan2(v[1], v[0]) * 180 / Math.PI);
+    #}
 
     // The visible gradient is: transparent 0%, red 15%, transparent 30%.
     // On a 360-degree conic gradient this is a triangular red-intensity band
