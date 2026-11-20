@@ -227,6 +227,7 @@
         #rise-ground-mask { position: fixed; display: none; background: white; z-index: 960; pointer-events: none; }
         #scale { position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); width: 40px; height: 40px; pointer-events: none; }
         #scale-display { box-sizing: border-box; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 24px; height: 16px; border: 2px solid #555; border-radius: 4px; background: #e5e5e5; color: #777; font: bold 9px Arial; display: grid; place-items: center; transition: background .35s, color .35s; }
+        #scale-display.low { background: #cc0000; color: white; }
         #scale-display.ready { background: #48b56b; color: white; }
         #scale-stem { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); height: 4.5px; border-left: 2px solid #555; }
         #scale-tray { box-sizing: border-box; position: absolute; left: 50%; transform: translateX(-50%); bottom: 20.5px; width: 26.7px; height: 6px; border: 2px solid #555; border-top: 0; border-radius: 0 0 3px 3px; }
@@ -530,8 +531,9 @@
     function updateScale() {
         const value = bucketDocked ? Math.round(bucketFillArea / (PARTICLE_SIZE * PARTICLE_SIZE)) : 0;
         scaleDisplay.textContent = Math.min(666, value);
-        scaleDisplay.classList.toggle("ready", value >= SCALE_TARGET);
-        if (value >= SCALE_TARGET && !unlocked) {
+        scaleDisplay.classList.toggle("low", bucketDocked && value < SCALE_TARGET);
+				scaleDisplay.classList.toggle("ready", bucketDocked && value >= SCALE_TARGET);
+				if (value >= SCALE_TARGET && !unlocked) {
             unlocked = true;
             reveal.classList.add("unlocked");
         }
@@ -697,22 +699,18 @@
 
     // Read the actual CSS rotation of .box::before so the emitter pulse stays
     // synchronized with the visible rotating red conic-gradient.
-    const rotationStart = performance.now();
 
-		function borderRotationDegrees() {
-    		return ((performance.now() - rotationStart) / 3000 * 360) % 360;
-		}
-    #function borderRotationDegrees() {
-    #    const transform = getComputedStyle(box, "::before").transform;
-    #    if (!transform || transform === "none") return 0;
-    #
-    #    const match = transform.match(/^matrix\(([^)]+)\)$/);
-    #    if (!match) return 0;
-    #
-    #    const v = match[1].split(",").map(Number);
-    #    if (v.length < 2 || !v.every(Number.isFinite)) return 0;
-    #    return normalizeDegrees(Math.atan2(v[1], v[0]) * 180 / Math.PI);
-    #}
+    function borderRotationDegrees() {
+        const transform = getComputedStyle(box, "::before").transform;
+        if (!transform || transform === "none") return 0;
+
+        const match = transform.match(/^matrix\(([^)]+)\)$/);
+        if (!match) return 0;
+
+        const v = match[1].split(",").map(Number);
+        if (v.length < 2 || !v.every(Number.isFinite)) return 0;
+        return normalizeDegrees(Math.atan2(v[1], v[0]) * 180 / Math.PI);
+    }
 
     // The visible gradient is: transparent 0%, red 15%, transparent 30%.
     // On a 360-degree conic gradient this is a triangular red-intensity band
