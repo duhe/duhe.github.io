@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta name="version" content="v067">
+    <meta name="version" content="v068">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>duhe github</title>
@@ -973,8 +973,10 @@
 
         bucketDrag = {
             pointerId: event.pointerId,
-            dx: event.clientX - r.left,
-            dy: event.clientY - r.top
+						dx: event.clientX - r.left + (event.pointerType === 'touch' ? 35 : 0),
+						dy: event.clientY - r.top + (event.pointerType === 'touch' ? 55 : 0),
+						touch: event.pointerType === 'touch',
+						start: performance.now()
         };
 
         bucketDocked = false;
@@ -991,9 +993,10 @@
         const w = bucket.offsetWidth;
         const h = bucket.offsetHeight;
 
-        let left = event.clientX - bucketDrag.dx;
-        let top = event.clientY - bucketDrag.dy;
-
+				const f = bucketDrag.touch ? Math.min(1, (performance.now() - bucketDrag.start) / 150) : 0;
+				let left = event.clientX - bucketDrag.dx - 35 * f;
+				let top = event.clientY - bucketDrag.dy - 55 * f;
+        
         left = Math.max(-w + pad, Math.min(innerWidth - pad, left));
         top = Math.max(-h + pad, Math.min(innerHeight - pad, top));
 
