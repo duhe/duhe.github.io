@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta name="version" content="v065">
+    <meta name="version" content="v066">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>duhe github</title>
@@ -700,15 +700,15 @@
     // Read the actual CSS rotation of .box::before so the emitter pulse stays
     // synchronized with the visible rotating red conic-gradient.
  
-   function borderRotationDegrees() {
-       const transform = getComputedStyle(box, "::before").transform;
-       if (!transform || transform === "none") return 0;
-       const match = transform.match(/^matrix\(([^)]+)\)$/);
-       if (!match) return 0;
-       const v = match[1].split(",").map(Number);
-       if (v.length < 2 || !v.every(Number.isFinite)) return 0;
-       return normalizeDegrees(Math.atan2(v[1], v[0]) * 180 / Math.PI);
-   }
+		function borderRotationDegrees() {
+		    const anim = box.getAnimations({subtree: true})
+		        .find(a => a.effect?.target?.pseudoElement === '::before');
+		
+		    if (!anim) return 0;
+		
+		    const timing = anim.effect.getComputedTiming();
+		    return normalizeDegrees((timing.progress ?? 0) * 360);
+		}
 
     // The visible gradient is: transparent 0%, red 15%, transparent 30%.
     // On a 360-degree conic gradient this is a triangular red-intensity band
@@ -905,8 +905,8 @@
         for (const emitter of emitters) {
             if (emitter.radius < ACTIVE_RADIUS) continue;
 
-            //const intensity = redBorderIntensityAt(emitter, rotationDeg);
-            const intensity = 1;
+            const intensity = redBorderIntensityAt(emitter, rotationDeg);
+            //const intensity = 1;
             if (intensity > 0.08 && now - emitter.lastPump >= PUMP_INTERVAL) {
                 shoot(emitter, now, intensity);
                 emitter.lastPump = now;
